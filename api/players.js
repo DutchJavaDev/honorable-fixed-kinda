@@ -24,7 +24,7 @@ async function ensureTable() {
 async function listPlayers() {
   try {
     await ensureTable();
-    const { rows } = await getDatabase()`SELECT name FROM players ORDER BY name ASC`;
+    const rows = await getDatabase()`SELECT name FROM players ORDER BY name ASC`;
     return rows.map((row) => row.name);
   } catch (error) {
     console.error(error);
@@ -43,7 +43,7 @@ async function addPlayer(request) {
       ON CONFLICT (name_key) DO UPDATE SET name = players.name
       RETURNING name
     `;
-    return { name: result.rows[0].name };
+    return { name: result[0].name };
   } catch (error) {
     console.error(error);
     throw new Error('Could not save player.');
