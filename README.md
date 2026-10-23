@@ -36,9 +36,12 @@ Opening `index.html` directly may work in many browsers, but using a local serve
 ## Deploy on Vercel
 
 1. Import this repository into Vercel.
-2. Install a Postgres provider from Vercel’s **Marketplace / Storage** tab (Neon is a good fit for this app).
-3. Make sure `DATABASE_URL` is available to the deployment. `POSTGRES_URL` is also supported for existing Vercel Postgres connections.
-4. Redeploy. The `/api/players` function creates its `players` table automatically on first use.
+2. In Vercel, open **Marketplace / Storage**, select the Neon database `neon-charcoal-castle`, and connect it to this project. If it is not connected yet, install Neon and select that existing database.
+3. In **Settings → Environment Variables**, confirm that the connection string is available as `DATABASE_URL` for **Production**, **Preview**, and **Development**. `POSTGRES_URL` is also supported.
+4. Push to Git. Vercel installs `@neondatabase/serverless` and deploys `api/players.js` as a serverless function automatically.
+5. Open the deployed app and add a player. The function creates its `players` table automatically on first use.
+
+Do not commit the real connection string. For local development, copy `.env.example` to `.env.local` and fill in the pooled Neon connection string. Vercel environment-variable changes apply to new deployments, so redeploy after changing them.
 
 The player database is intentionally public: anyone who can open the app can add or delete names. The active tournament session remains in each browser’s `localStorage`; use **Add** beside a saved name to put it into the current roster after a refresh.
 
