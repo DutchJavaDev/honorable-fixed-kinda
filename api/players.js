@@ -15,6 +15,14 @@ function cleanName(value) {
   return typeof value === 'string' ? value.trim().replace(/\s+/g, ' ').slice(0, 28) : '';
 }
 
+async function getRequestBody(request) {
+  // Vercel's Node serverless runtime exposes the parsed payload as `body`,
+  // while Fetch-style requests expose it through `json()`.
+  if (typeof request.json === 'function') return request.json();
+  if (request.body && typeof request.body === 'string') return JSON.parse(request.body);
+  return request.body || {};
+}
+
 async function ensureTable() {
   await getDatabase()`CREATE TABLE IF NOT EXISTS players (
     id SERIAL PRIMARY KEY,
@@ -37,7 +45,7 @@ async function listPlayers() {
 
 async function addPlayer(request) {
   try {
-    const name = cleanName((await request.json()).name);
+    const name = cleanName((await getRequestBody(request)).name);
     if (!name) return { error: 'Enter a player name.', status: 400 };
     await ensureTable();
     const nameKey = name.toLocaleLowerCase();
