@@ -33,13 +33,9 @@
         <section class="main-column">
           <div class="section-heading"><div><p class="eyebrow">01 / SQUADRON MANIFEST</p><h2>Assemble your squad</h2></div><span class="status-badge" id="rosterStatus">0 READY</span></div>
           <div class="panel roster-panel">
-            <div class="input-row"><input id="nameInput" type="text" maxlength="28" placeholder="Enter participant name" autocomplete="off"><button class="button button-primary" id="addPlayer"><span>+</span> Save & add player</button></div>
+            <div class="roster-toolbar"><div><strong>Current session roster</strong><p>Add pilots from your shared database or build a demo roster.</p></div><button class="button button-primary" id="openPlayerDatabase"><span>⌕</span> Open player database</button></div>
             <div class="roster-list" id="rosterList"><div class="empty-state"><span class="empty-icon">⌁</span><p>No players in the roster</p><small>Add at least 3 players to initialize the holotables.</small></div></div>
             <div class="roster-footer"><span><i class="key-dot"></i> Recommended: multiples of 4</span><button class="text-button" id="demoData">Load a 12-player demo</button></div>
-            <div class="saved-players">
-              <div class="saved-heading"><div><span class="eyebrow">PLAYER DATABASE</span><small class="saved-help">Add saved names to this session</small></div><span class="saved-status" id="savedPlayersStatus">Loading…</span></div>
-              <div class="saved-list" id="savedPlayersList"><span class="saved-empty">Loading saved players…</span></div>
-            </div>
           </div>
 
           <div class="section-heading round-heading"><div><p class="eyebrow">02 / MISSION CONTROL</p><h2>Set the battle plan</h2></div><label class="round-control">ROUNDS <input id="roundCount" type="number" min="1" max="12" value="3"></label></div>
@@ -61,6 +57,14 @@
         </aside>
       </div>
     </main>
+    <div class="flyout-backdrop" id="playerDatabaseBackdrop" hidden></div>
+    <aside class="player-flyout" id="playerDatabaseFlyout" aria-labelledby="playerDatabaseTitle" aria-hidden="true">
+      <div class="flyout-header"><div><p class="eyebrow">SHARED DIRECTORY</p><h2 id="playerDatabaseTitle">Player database</h2><p class="flyout-copy">Save names once, then add them to any session.</p></div><button class="flyout-close" id="closePlayerDatabase" aria-label="Close player database">×</button></div>
+      <form class="flyout-add" id="playerDatabaseForm"><label for="nameInput">Save a new player</label><div class="input-row"><input id="nameInput" type="text" maxlength="28" placeholder="Enter participant name" autocomplete="off"><button class="button button-primary" id="addPlayer" type="submit"><span>+</span> Save & add</button></div></form>
+      <div class="flyout-list-heading"><div><span class="eyebrow">SAVED PLAYERS</span><small class="saved-help">Add a name to the current session</small></div><span class="saved-status" id="savedPlayersStatus">Loading…</span></div>
+      <label class="database-search"><span>⌕</span><input id="playerSearch" type="search" placeholder="Search saved players" autocomplete="off"></label>
+      <div class="saved-list" id="savedPlayersList"><span class="saved-empty">Loading saved players…</span></div>
+    </aside>
     <div class="toast" id="toast" role="status"></div>
     <style>
       :root{--cyan:#7ac7c5;--gold:#e5a94d;--coral:#d96b4f;--line:#3a3731;--muted:#938b7d;--panel:#151618;--panel-2:#1d1b18;--text:#f3eee2}body{background-image:radial-gradient(circle at 78% 8%,#7e392b38 0,transparent 18%),radial-gradient(circle at 86% 9%,#e9a34a22 0,transparent 8%),radial-gradient(circle at 5% 80%,#252b2b 0,transparent 29%),linear-gradient(155deg,#0b0d10 0%,#161411 54%,#0b0d10 100%)}body:after{content:"";position:fixed;right:10%;top:3%;width:82px;height:82px;border-radius:50%;background:#e7a34a;box-shadow:0 0 18px #e7a34a,0 0 65px #bd4e2d66;opacity:.8;pointer-events:none;z-index:-1}.topbar{background:#0b0c0de8;border-bottom-color:#4b4030}.brand strong span{color:var(--gold)}.brand-mark{border-color:var(--gold)}.brand-mark:before,.brand-mark:after{background:var(--gold)}.brand-mark span:first-child{border-color:var(--gold)}.eyebrow{color:var(--gold)}.panel,.side-card{background:linear-gradient(145deg,#1b1b1ae8,#111211e8);border-color:#403a31;box-shadow:0 18px 50px #0008}.button-primary{background:var(--gold);color:#171009}.button-primary:hover{background:#ffd37d}.button-large{background:#7ac7c5}.button-large:hover{background:#a5ebe8}.status-badge,.round-pill{color:var(--gold);border-color:#806039}.final-winner:first-child{background:#3a3022;border-color:#a27c43}.hero-orbit{width:300px;height:190px;margin-right:0;border-bottom:1px solid #8a5a3d;border-radius:50%;background:linear-gradient(180deg,transparent 0 62%,#2a1b16 63% 100%),radial-gradient(ellipse at 20% 91%,#9b5d3d 0 18%,transparent 19%),radial-gradient(ellipse at 72% 93%,#67402f 0 25%,transparent 26%);overflow:hidden}.hero-orbit:before,.hero-orbit:after{content:"";position:absolute;border-radius:50%;top:16px}.hero-orbit:before{width:52px;height:52px;left:57px;background:#f2b75c;box-shadow:0 0 15px #f2b75c,0 0 42px #d35d3299}.hero-orbit:after{width:32px;height:32px;right:50px;top:42px;background:#f0d17b;box-shadow:0 0 13px #f0d17b,0 0 32px #ca6b3a99}.hero-orbit .orbit,.hero-orbit .planet{display:none}.orbit-label{top:92px;left:108px;color:#c6a477}
