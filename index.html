@@ -22,7 +22,7 @@
     <main id="top" class="app-shell">
       <section class="hero">
         <div>
-          <p class="eyebrow"><span>◈</span> Twin suns // desert planet transmission</p>
+          <p class="eyebrow"><span>◈</span> Outer Rim // twin suns transmission</p>
           <h1>THE <em>TWIN SUNS</em><br>HOLOTABLE</h1>
           <p class="hero-copy">Set the squadron beneath two suns.<br>Let the best pilot claim the galaxy.</p>
         </div>
@@ -80,6 +80,31 @@
       .orbit-label{top:105px;left:132px;z-index:4;color:#e7bd87;text-shadow:0 1px 14px #0b0808;font-size:9px;letter-spacing:2.6px}
       .orbit-label:before{content:"";display:block;width:25px;height:1px;margin:0 auto 8px;background:#d9955b88;box-shadow:0 0 8px #d9955b55}
       @media(max-width:850px){.hero-orbit{display:none}}
+    </style>
+    <style>
+      /* Final command-deck pass: angular panels, amber instrumentation, and restrained alert red. */
+      :root{--imperial-amber:#f0b35a;--warning-red:#dc5d45;--holo-blue:#78c8cf;--deck-black:#0a0c0f}
+      body{background-color:var(--deck-black);background-image:radial-gradient(ellipse at 75% 4%,#7d3d252b 0,transparent 23%),radial-gradient(ellipse at 15% 100%,#162b342e 0,transparent 32%),linear-gradient(130deg,#080a0d 0%,#12161a 50%,#090b0e 100%)}
+      body:before{opacity:.22;background-image:radial-gradient(#d9e8e622 .65px,transparent .8px);background-size:31px 31px}
+      body:after{width:90px;height:90px;right:7%;top:4%;background:radial-gradient(circle at 35% 32%,#ffe1a2 0 7%,#f7b758 27%,#db6b36 62%,#7b2d26 100%);box-shadow:0 0 18px #ffc96f,0 0 70px #e56d3c66;opacity:.95}
+      .topbar{height:72px;background:#080a0de8;border-bottom:1px solid #715536;box-shadow:0 1px 0 #f0b35a14,0 12px 28px #0007}
+      .topbar:after{content:"COMMAND DECK // SECTOR 7";position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);padding:0 10px;background:var(--deck-black);color:#9b7650;font:600 8px 'Barlow Condensed';letter-spacing:2px;white-space:nowrap}
+      .brand strong{letter-spacing:2.8px}.brand strong span{color:var(--imperial-amber)}.brand small{color:#9c8770}
+      .brand-mark{border-color:var(--imperial-amber);box-shadow:0 0 14px #f0b35a22}.brand-mark:before,.brand-mark:after{background:var(--imperial-amber)}.brand-mark span:first-child{border-color:var(--imperial-amber)}
+      .live-dot{background:var(--warning-red);box-shadow:0 0 12px var(--warning-red)}.topbar-meta{color:#b08d69}
+      .app-shell{padding-top:68px}
+      .hero{min-height:228px}.hero:after{content:"// SYSTEMS NOMINAL //";position:absolute;left:0;bottom:2px;color:#5f6c70;font:600 9px 'Barlow Condensed';letter-spacing:2px}
+      h1{letter-spacing:-1px;text-shadow:0 8px 30px #000}.hero-copy{color:#a0a9a9}
+      .eyebrow{color:var(--imperial-amber);text-shadow:0 0 14px #f0b35a22}.eyebrow span{color:var(--holo-blue)}
+      .panel,.side-card{background:linear-gradient(145deg,#1a1c1de8,#0e1113ee);border-color:#49443b;box-shadow:0 18px 50px #0009;position:relative}
+      .panel:before,.side-card:before{content:"";position:absolute;inset:-1px;pointer-events:none;border:1px solid #f0b35a0b;clip-path:polygon(0 0,14px 0,14px 1px,calc(100% - 14px) 1px,calc(100% - 14px) 0,100% 0,100% 14px,calc(100% - 1px) 14px,calc(100% - 1px) calc(100% - 14px),100% calc(100% - 14px),100% 100%,calc(100% - 14px) 100%,calc(100% - 14px) calc(100% - 1px),14px calc(100% - 1px),14px 100%,0 100%,0 calc(100% - 14px),1px calc(100% - 14px),1px 14px,0 14px)}
+      .status-badge,.round-pill{color:var(--imperial-amber);border-color:#9c7446;background:#2a2015}.button-primary{background:var(--imperial-amber);box-shadow:0 0 18px #f0b35a1c}.button-primary:hover{background:#ffd991}.button-large{background:var(--holo-blue);box-shadow:0 0 18px #78c8cf22}.button-large:hover{background:#adf0ed}
+      .input-row input{background:#080b0d;border-color:#4b4b43}.input-row input:focus{border-color:var(--imperial-amber);box-shadow:0 0 0 2px #f0b35a18}.player-chip{background:#15191a;border-color:#3d403c}.avatar{background:#263a3d;color:var(--holo-blue)}
+      .builder-icon{border-color:#8c6b43;color:var(--imperial-amber)}.round-control input{background:#101312;border-color:#725431}.empty-round{border-color:#63543f}.ring{color:var(--imperial-amber)}
+      .table-card{background:#121718;border-color:#4a4439}.table-head{border-bottom-color:#3c3c34}.table-name span{color:var(--imperial-amber)}.table-player{border-bottom-color:#2c3230}.table-status{color:var(--holo-blue)}.score-input:focus{outline-color:var(--imperial-amber)}.table-card.complete{border-color:#668b7f}
+      .podium{border-bottom-color:#554d40}.podium-block{background:#2b3e42;border-color:#527d7d;color:var(--holo-blue)}.place-1 .podium-block{background:#5b4529;border-color:#b18449;color:#ffd88a}.standing-score,.guide-step>span,.session-line strong{color:var(--imperial-amber)}.signal{color:var(--holo-blue)}
+      .text-button{color:var(--holo-blue)}.reset-button:hover{border-color:var(--warning-red);color:var(--warning-red)}.toast{background:var(--imperial-amber)}
+      @media(max-width:850px){.app-shell{padding-top:42px}.hero:after{display:none}}
     </style>
     <script src="app.js"></script>
   </body>
