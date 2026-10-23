@@ -15,6 +15,7 @@ The interface is styled as a sci-fi tournament console set on a fixed, cinematic
 - Track total points, completed rounds, rankings, and the top three players live.
 - Show a final tournament summary, podium, rankings, and booster-prize allocation.
 - Persist the active session in the browser with `localStorage`.
+- Keep a shared player-name database in Postgres, with add, pick, and delete controls.
 - Reset the current session and start a fresh tournament.
 - Responsive layout for desktop and mobile screens.
 
@@ -31,6 +32,15 @@ python3 -m http.server 8000
 Then open [http://localhost:8000](http://localhost:8000) in a browser.
 
 Opening `index.html` directly may work in many browsers, but using a local server is the more reliable option.
+
+## Deploy on Vercel
+
+1. Import this repository into Vercel.
+2. Install a Postgres provider from Vercel’s **Marketplace / Storage** tab (Neon is a good fit for this app).
+3. Make sure `DATABASE_URL` is available to the deployment. `POSTGRES_URL` is also supported for existing Vercel Postgres connections.
+4. Redeploy. The `/api/players` function creates its `players` table automatically on first use.
+
+The player database is intentionally public: anyone who can open the app can add or delete names. The active tournament session remains in each browser’s `localStorage`; use **Add** beside a saved name to put it into the current roster after a refresh.
 
 ## How to use
 
@@ -64,7 +74,8 @@ Tables are built around the ideal pod size of four players. The pairing logic al
 - Plain HTML, CSS, and JavaScript; there are no runtime dependencies.
 - Google Fonts are loaded from the network for the intended typography. The app remains functional if they are unavailable.
 - Session data is stored under the `holotable-session-v1` key in `localStorage`.
-- The app is currently single-session and client-side only; there is no server, account system, or cross-device synchronization.
+- Tournament session data is still browser-local, while saved player names are shared through the Vercel Postgres API.
+- There is no authentication; database add/delete access is intentionally open as requested.
 
 ## Keeping this document current
 

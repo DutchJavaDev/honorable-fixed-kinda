@@ -33,9 +33,13 @@
         <section class="main-column">
           <div class="section-heading"><div><p class="eyebrow">01 / SQUADRON MANIFEST</p><h2>Assemble your squad</h2></div><span class="status-badge" id="rosterStatus">0 READY</span></div>
           <div class="panel roster-panel">
-            <div class="input-row"><input id="nameInput" type="text" maxlength="28" placeholder="Enter participant name" autocomplete="off"><button class="button button-primary" id="addPlayer"><span>+</span> Add player</button></div>
+            <div class="input-row"><input id="nameInput" type="text" maxlength="28" placeholder="Enter participant name" autocomplete="off"><button class="button button-primary" id="addPlayer"><span>+</span> Save & add player</button></div>
             <div class="roster-list" id="rosterList"><div class="empty-state"><span class="empty-icon">⌁</span><p>No players in the roster</p><small>Add at least 3 players to initialize the holotables.</small></div></div>
             <div class="roster-footer"><span><i class="key-dot"></i> Recommended: multiples of 4</span><button class="text-button" id="demoData">Load a 12-player demo</button></div>
+            <div class="saved-players">
+              <div class="saved-heading"><div><span class="eyebrow">PLAYER DATABASE</span><small class="saved-help">Add saved names to this session</small></div><span class="saved-status" id="savedPlayersStatus">Loading…</span></div>
+              <div class="saved-list" id="savedPlayersList"><span class="saved-empty">Loading saved players…</span></div>
+            </div>
           </div>
 
           <div class="section-heading round-heading"><div><p class="eyebrow">02 / MISSION CONTROL</p><h2>Set the battle plan</h2></div><label class="round-control">ROUNDS <input id="roundCount" type="number" min="1" max="12" value="3"></label></div>
@@ -107,5 +111,6 @@
       @media(max-width:850px){.app-shell{padding-top:42px}.hero:after{display:none}}
     </style>
     <script src="app.js"></script>
+    <script src="database-ui.js"></script>
   </body>
 </html>
