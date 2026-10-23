@@ -37,7 +37,7 @@ Opening `index.html` directly may work in many browsers, but using a local serve
 
 1. Import this repository into Vercel.
 2. In Vercel, open **Marketplace / Storage**, select the Neon database `neon-charcoal-castle`, and connect it to this project. If it is not connected yet, install Neon and select that existing database.
-3. In **Settings → Environment Variables**, confirm that the connection string is available as `DATABASE_URL` for **Production**, **Preview**, and **Development**. `POSTGRES_URL` is also supported.
+3. In **Settings → Environment Variables**, confirm that the connection string is available as `DATABASE_URL` for **Production**, **Preview**, and **Development**. `POSTGRES_URL`, `POSTGRES_DATABASE_URL`, and `POSTGRESS_DATABASE_URL` are also supported.
 4. Push to Git. Vercel installs `@neondatabase/serverless` and deploys `api/players.js` as a serverless function automatically.
 5. Open the deployed app and add a player. The function creates its `players` table automatically on first use.
 

@@ -1,6 +1,9 @@
 import { neon } from '@neondatabase/serverless';
 
-const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+const databaseUrl = process.env.DATABASE_URL
+  || process.env.POSTGRES_URL
+  || process.env.POSTGRES_DATABASE_URL
+  || process.env.POSTGRESS_DATABASE_URL;
 const sql = databaseUrl ? neon(databaseUrl) : null;
 
 function getDatabase() {
