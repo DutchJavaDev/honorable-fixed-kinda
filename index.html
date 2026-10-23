@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Holotable // Tournament Control</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="scanlines"></div>
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="Holotable home">
+        <span class="brand-mark"><span></span><span></span></span>
+        <span><strong>HOLO<span>TABLE</span></strong><small>TOURNAMENT CONTROL</small></span>
+      </a>
+      <div class="topbar-meta"><span class="live-dot"></span><span>LOCAL SESSION</span><span class="divider"></span><span id="clock">--:--</span></div>
+    </header>
+
+    <main id="top" class="app-shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow"><span>◈</span> Twin suns // desert planet transmission</p>
+          <h1>THE <em>TWIN SUNS</em><br>HOLOTABLE</h1>
+          <p class="hero-copy">Set the squadron beneath two suns.<br>Let the best pilot claim the galaxy.</p>
+        </div>
+        <div class="hero-orbit" aria-hidden="true"><div class="orbit orbit-a"></div><div class="orbit orbit-b"></div><div class="planet planet-a"></div><div class="planet planet-b"></div><span class="orbit-label">ROUND<br>CONTROL</span></div>
+      </section>
+
+      <div class="layout">
+        <section class="main-column">
+          <div class="section-heading"><div><p class="eyebrow">01 / SQUADRON MANIFEST</p><h2>Assemble your squad</h2></div><span class="status-badge" id="rosterStatus">0 READY</span></div>
+          <div class="panel roster-panel">
+            <div class="input-row"><input id="nameInput" type="text" maxlength="28" placeholder="Enter participant name" autocomplete="off"><button class="button button-primary" id="addPlayer"><span>+</span> Add player</button></div>
+            <div class="roster-list" id="rosterList"><div class="empty-state"><span class="empty-icon">⌁</span><p>No players in the roster</p><small>Add at least 3 players to initialize the holotables.</small></div></div>
+            <div class="roster-footer"><span><i class="key-dot"></i> Recommended: multiples of 4</span><button class="text-button" id="demoData">Load a 12-player demo</button></div>
+          </div>
+
+          <div class="section-heading round-heading"><div><p class="eyebrow">02 / MISSION CONTROL</p><h2>Set the battle plan</h2></div><label class="round-control">ROUNDS <input id="roundCount" type="number" min="1" max="12" value="3"></label></div>
+          <div class="panel builder-panel">
+            <div class="builder-info"><div class="builder-icon">◒</div><div><strong>Tables favor the ideal pod</strong><p>Pairings are balanced around 4 players, then 3, then 5. Later rounds match players by their current score.</p></div></div>
+            <button class="button button-large" id="startTournament"><span>⟡</span> Generate round one</button>
+            <p class="hint" id="builderHint">Add at least 3 players to unlock round generation.</p>
+          </div>
+
+          <div class="section-heading live-heading"><div><p class="eyebrow">03 / BATTLEFIELD STATUS</p><h2 id="roundTitle">Awaiting deployment</h2></div><span class="round-pill" id="roundPill">ROUND —</span></div>
+          <div class="tables" id="tables"><div class="empty-round"><div class="ring">◎</div><h3>The tables are quiet</h3><p>Generate round one to deploy players to the holotables.</p></div></div>
+          <div class="final-overview" id="finalOverview" hidden></div>
+        </section>
+
+        <aside class="sidebar">
+          <div class="side-card standings-card"><div class="card-heading"><div><p class="eyebrow">LIVE LADDER</p><h3>Standings</h3></div><span class="signal">● SYNCED</span></div><div class="podium" id="podium"><div class="podium-empty">Standings populate<br>after round one.</div></div><div class="standings-list" id="standingsList"></div></div>
+          <div class="side-card guide-card"><p class="eyebrow">FIELD NOTES</p><h3>How the night runs</h3><div class="guide-step"><span>01</span><div><strong>Deploy</strong><small>Build balanced holotables from the squadron.</small></div></div><div class="guide-step"><span>02</span><div><strong>Score</strong><small>3 points for first, 2 for second, 1 for third.</small></div></div><div class="guide-step"><span>03</span><div><strong>Re-pair</strong><small>Strong pilots meet strong pilots next round.</small></div></div></div>
+          <div class="side-card session-card"><div class="session-line"><span>SESSION</span><strong id="sessionId">HT-————</strong></div><div class="session-line"><span>FORMAT</span><strong>FREE-FOR-ALL</strong></div><div class="session-line"><span>MAX ROUNDS</span><strong id="maxRoundsLabel">03</strong></div><button class="reset-button" id="resetSession">Reset session <span>↻</span></button></div>
+        </aside>
+      </div>
+    </main>
+    <div class="toast" id="toast" role="status"></div>
+    <style>
+      :root{--cyan:#7ac7c5;--gold:#e5a94d;--coral:#d96b4f;--line:#3a3731;--muted:#938b7d;--panel:#151618;--panel-2:#1d1b18;--text:#f3eee2}body{background-image:radial-gradient(circle at 78% 8%,#7e392b38 0,transparent 18%),radial-gradient(circle at 86% 9%,#e9a34a22 0,transparent 8%),radial-gradient(circle at 5% 80%,#252b2b 0,transparent 29%),linear-gradient(155deg,#0b0d10 0%,#161411 54%,#0b0d10 100%)}body:after{content:"";position:fixed;right:10%;top:3%;width:82px;height:82px;border-radius:50%;background:#e7a34a;box-shadow:0 0 18px #e7a34a,0 0 65px #bd4e2d66;opacity:.8;pointer-events:none;z-index:-1}.topbar{background:#0b0c0de8;border-bottom-color:#4b4030}.brand strong span{color:var(--gold)}.brand-mark{border-color:var(--gold)}.brand-mark:before,.brand-mark:after{background:var(--gold)}.brand-mark span:first-child{border-color:var(--gold)}.eyebrow{color:var(--gold)}.panel,.side-card{background:linear-gradient(145deg,#1b1b1ae8,#111211e8);border-color:#403a31;box-shadow:0 18px 50px #0008}.button-primary{background:var(--gold);color:#171009}.button-primary:hover{background:#ffd37d}.button-large{background:#7ac7c5}.button-large:hover{background:#a5ebe8}.status-badge,.round-pill{color:var(--gold);border-color:#806039}.final-winner:first-child{background:#3a3022;border-color:#a27c43}.hero-orbit{width:300px;height:190px;margin-right:0;border-bottom:1px solid #8a5a3d;border-radius:50%;background:linear-gradient(180deg,transparent 0 62%,#2a1b16 63% 100%),radial-gradient(ellipse at 20% 91%,#9b5d3d 0 18%,transparent 19%),radial-gradient(ellipse at 72% 93%,#67402f 0 25%,transparent 26%);overflow:hidden}.hero-orbit:before,.hero-orbit:after{content:"";position:absolute;border-radius:50%;top:16px}.hero-orbit:before{width:52px;height:52px;left:57px;background:#f2b75c;box-shadow:0 0 15px #f2b75c,0 0 42px #d35d3299}.hero-orbit:after{width:32px;height:32px;right:50px;top:42px;background:#f0d17b;box-shadow:0 0 13px #f0d17b,0 0 32px #ca6b3a99}.hero-orbit .orbit,.hero-orbit .planet{display:none}.orbit-label{top:92px;left:108px;color:#c6a477}
+      .final-overview{margin-top:18px;background:linear-gradient(145deg,#18252a,#10181d);border:1px solid #527d7b;padding:22px;box-shadow:0 0 35px #63e1df0d}.final-kicker{color:var(--cyan);font:600 10px 'Barlow Condensed';letter-spacing:2px;margin:0 0 7px}.final-overview h3{font:500 30px 'Barlow Condensed';margin:0}.final-copy{color:#94a1aa;font-size:11px;margin:5px 0 20px}.final-podium{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}.final-winner{padding:14px;background:#1c2e35;border:1px solid #4d9290}.final-winner:first-child{border-color:#a27c43;background:#3a3022}.final-rank{font:600 10px 'Barlow Condensed';letter-spacing:1px;color:var(--gold)}.final-name{display:block;font-size:15px;font-weight:600;margin:8px 0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.final-score{color:#aab7bc;font-size:10px}.final-table{width:100%;border-collapse:collapse;font-size:11px}.final-table th{color:#71818c;font:600 9px 'Barlow Condensed';letter-spacing:1px;text-align:left;padding:8px;border-bottom:1px solid #32434a}.final-table td{padding:9px 8px;border-bottom:1px solid #26363d}.final-table td:last-child,.final-table th:last-child{text-align:right;color:var(--gold)}
+      @media(max-width:500px){.final-podium{grid-template-columns:1fr}.final-overview{padding:17px}}
+    </style>
+    <script src="app.js"></script>
+  </body>
+</html>
