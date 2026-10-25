@@ -1,0 +1,15 @@
+{
+  "name": "Holotable // Tournament Control",
+  "short_name": "Holotable",
+  "description": "Offline tournament control and the SWU Arnhem event calendar.",
+  "start_url": "./manager.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#080a0d",
+  "theme_color": "#0b0d10",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

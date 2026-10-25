@@ -18,6 +18,7 @@ The interface is styled as a sci-fi tournament console set on a fixed, cinematic
 - Keep a shared player-name database in Postgres, with add, pick, and delete controls.
 - Reset the current session and start a fresh tournament.
 - Responsive layout for desktop and mobile screens.
+- Installable as a PWA, with cached app files and offline tournament control.
 
 ## Run locally
 
@@ -32,6 +33,10 @@ python3 -m http.server 8000
 Then open [http://localhost:8000](http://localhost:8000) in a browser.
 
 Opening `index.html` directly may work in many browsers, but using a local server is the more reliable option.
+
+## Use on a phone
+
+Deploy the app over HTTPS, open it on the phone, and choose **Add to Home Screen** or **Install app** in the browser menu. After the first online visit, the manager and calendar app files are cached for offline use. Tournament rosters, scores, and sessions remain available offline through browser storage. The shared player database needs a connection; names used offline are kept locally on that device.
 
 ## Deploy on Vercel
 
@@ -70,6 +75,9 @@ Tables are built around the ideal pod size of four players. The pairing logic al
 | `index.html` | Application markup, typography imports, and theme overrides. |
 | `styles.css` | Main layout, responsive styling, and visual design system. |
 | `app.js` | Session state, table generation, scoring, standings, persistence, and UI behavior. |
+| `manifest.webmanifest` | Install metadata and app icons. |
+| `sw.js` | Offline app-shell and runtime caching. |
+| `pwa.js` | Service-worker registration. |
 | `README.md` | Product overview and local development guide. |
 
 ## Technical notes
