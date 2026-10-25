@@ -23,6 +23,12 @@ async function getRequestBody(request) {
   return request.body || {};
 }
 
+function getQueryParam(request, name) {
+  if (request.query && typeof request.query[name] === 'string') return request.query[name];
+  const requestUrl = request.url || '';
+  return new URL(requestUrl, 'http://localhost').searchParams.get(name) || '';
+}
+
 async function ensureTable() {
   await getDatabase()`CREATE TABLE IF NOT EXISTS players (
     id SERIAL PRIMARY KEY,
@@ -63,7 +69,7 @@ async function addPlayer(request) {
 
 async function removePlayer(request) {
   try {
-    const name = cleanName(new URL(request.url).searchParams.get('name'));
+    const name = cleanName(getQueryParam(request, 'name'));
     if (!name) return { error: 'Player name is required.', status: 400 };
     await ensureTable();
     await getDatabase()`DELETE FROM players WHERE name_key = ${name.toLocaleLowerCase()}`;

@@ -8,7 +8,7 @@ The interface is styled as a sci-fi tournament console set on a fixed, cinematic
 
 - Add, remove, and validate participant names before the first round.
 - Load a ready-made 12-player demo roster.
-- Choose between 1 and 12 rounds.
+- Choose between 1 and 12 rounds before starting the tournament; the setting is locked after round one begins.
 - Generate tables that favor groups of four, then three or five when needed.
 - Re-pair players by their current score after each completed round.
 - Enter scores from 0 to 3 for each player at every table.
