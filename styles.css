@@ -48,7 +48,9 @@ body.calendar-page{background:#e6dfd3;color:#243438;background-image:radial-grad
 @media(max-width:700px){.life-counter-page .topbar{height:72px;padding:0 20px}.life-counter-page #playersGrid{padding-top:72px}.life-counter-page .topbar-meta{gap:12px;font-size:10px}.life-counter-page .topbar-meta>span{display:none}.life-counter-page .topbar-meta .live-dot{display:block}}
 @media(max-width:500px){.life-counter-page .topbar-meta{display:flex;gap:12px}.life-counter-page .topbar-link{font-size:10px;letter-spacing:1.4px}.life-counter-page .brand small{display:block}.life-counter-page .brand strong{font-size:24px}.life-counter-page .brand-mark{width:32px;height:32px}.life-counter-page .brand-mark:before{height:38px;left:14px;top:-4px}.life-counter-page .brand-mark:after{width:38px;top:14px;left:-4px}.life-counter-page .brand-mark span:first-child{top:11px;left:11px;width:8px;height:8px}}
 
-@media (max-width:700px) and (orientation:landscape){.life-counter-page .topbar{display:none}.life-counter-page #playersGrid{padding-top:0}}
+/* Landscape phones are often wider than 700px, so use the short viewport height
+   as the reliable phone-sized signal when hiding the life counter header. */
+@media (orientation:landscape) and (max-height:500px){.life-counter-page .topbar{display:none}.life-counter-page #playersGrid{padding-top:0}}
 
 /* Calendar page: use the same command-deck language as manager and life counter. */
 :root{--imperial-amber:#f0b35a;--warning-red:#dc5d45;--holo-blue:#78c8cf;--deck-black:#0a0c0f}

@@ -1,10 +1,10 @@
-const CACHE_NAME = 'holotable-shell-v2';
+const CACHE_NAME = 'holotable-shell-v3';
 const APP_SHELL = [
   './',
   './index.html',
   './manager.html',
   './life-counter.html',
-  './styles.css',
+  './styles.css?v=3',
   './app.js',
   './database-ui.js',
   './calendar-page.js',
