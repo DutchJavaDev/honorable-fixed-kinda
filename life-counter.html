@@ -6,6 +6,7 @@
   <title>Star Wars: Unlimited — Twin Suns Tracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
   <style>
     * {
@@ -204,6 +205,8 @@
       <a class="topbar-link active" href="life-counter.html">LIFE COUNTER</a>
       <span class="live-dot"></span>
       <span>LOCAL SESSION</span>
+      <span class="divider"></span>
+      <span id="lifeClock">--:--</span>
     </div>
   </header>
 
@@ -1500,6 +1503,14 @@
     renderPlayers();
     updateHudDisplays();
     requestScreenWakeLock();
+  </script>
+  <script>
+    function updateLifeClock() {
+      const clock = document.getElementById('lifeClock');
+      if (clock) clock.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    updateLifeClock();
+    setInterval(updateLifeClock, 30000);
   </script>
 </body>
 </html>

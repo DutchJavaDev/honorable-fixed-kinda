@@ -23,3 +23,79 @@ body.calendar-page{background:#e6dfd3;color:#243438;background-image:radial-grad
 @media(max-width:700px){.life-counter-page .topbar{padding:0 18px}.life-counter-page .topbar-meta{gap:8px;font-size:9px}.life-counter-page .topbar-meta>span{display:none}.life-counter-page .topbar-meta .live-dot{display:block}.life-counter-page #playersGrid{padding-top:68px}}
 @media(max-width:500px){.life-counter-page .topbar-meta{display:flex}.life-counter-page .topbar-link{font-size:9px;letter-spacing:.8px}.life-counter-page .brand small{display:none}.life-counter-page .brand strong{font-size:19px}.life-counter-page .brand-mark{width:26px;height:26px}.life-counter-page .brand-mark:before{height:31px;left:12px;top:-3px}.life-counter-page .brand-mark:after{width:31px;top:12px;left:-3px}.life-counter-page .brand-mark span:first-child{top:9px;left:9px;width:7px;height:7px}}
 .draft-swatch{background:#b88be8}.tournament-calendar .fc-kind-draft{background:#d6a7f0;color:#160d22;border-left-color:#edd8ff}
+
+/* Life counter: keep menu typography in the shared app language and give its logo a HUD-blue identity. */
+.life-counter-page #menuModal,.life-counter-page #baseModal{font-family:'Space Grotesk',sans-serif}
+.life-counter-page #menuModal .sw-font,.life-counter-page #baseModal .sw-font{font-family:'Barlow Condensed',sans-serif}
+.life-counter-page .brand strong span{color:var(--warning-red,#dc5d45)}
+.life-counter-page .brand-mark{border-color:var(--warning-red,#dc5d45);box-shadow:0 0 14px #dc5d4522}
+.life-counter-page .brand-mark:before,.life-counter-page .brand-mark:after{background:var(--warning-red,#dc5d45)}
+.life-counter-page .brand-mark span:first-child{border-color:var(--warning-red,#dc5d45)}
+
+.calendar-page .brand strong span{color:var(--holo-blue,#78c8cf)}
+.calendar-page .brand-mark{border-color:var(--holo-blue,#78c8cf);box-shadow:0 0 14px #78c8cf22}
+.calendar-page .brand-mark:before,.calendar-page .brand-mark:after{background:var(--holo-blue,#78c8cf)}
+.calendar-page .brand-mark span:first-child{border-color:var(--holo-blue,#78c8cf)}
+.calendar-page .brand strong span,.calendar-page .brand-mark,.calendar-page .brand-mark:before,.calendar-page .brand-mark:after,.calendar-page .brand-mark span:first-child{color:var(--holo-blue);border-color:var(--holo-blue)}
+.calendar-page .brand-mark:before,.calendar-page .brand-mark:after{background:var(--holo-blue)}
+.calendar-page .brand-mark span{background:var(--holo-blue)}
+.calendar-page .brand-mark span:first-child{background:var(--deck-black);border-color:var(--holo-blue)}
+
+/* Match the life counter header geometry to the manager and calendar headers. */
+.life-counter-page .topbar{height:72px;padding:0 6vw;background:#080a0de8;border-bottom:1px solid #715536;box-shadow:0 1px 0 #f0b35a14,0 12px 28px #0007}
+.life-counter-page .topbar:after{content:"COMMAND DECK // SECTOR 7";position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);padding:0 10px;background:var(--deck-black,#0a0c0f);color:#9b7650;font:600 8px 'Barlow Condensed';letter-spacing:2px;white-space:nowrap}
+.life-counter-page #playersGrid{padding-top:80px}
+@media(max-width:700px){.life-counter-page .topbar{height:72px;padding:0 20px}.life-counter-page #playersGrid{padding-top:72px}.life-counter-page .topbar-meta{gap:12px;font-size:10px}.life-counter-page .topbar-meta>span{display:none}.life-counter-page .topbar-meta .live-dot{display:block}}
+@media(max-width:500px){.life-counter-page .topbar-meta{display:flex;gap:12px}.life-counter-page .topbar-link{font-size:10px;letter-spacing:1.4px}.life-counter-page .brand small{display:block}.life-counter-page .brand strong{font-size:24px}.life-counter-page .brand-mark{width:32px;height:32px}.life-counter-page .brand-mark:before{height:38px;left:14px;top:-4px}.life-counter-page .brand-mark:after{width:38px;top:14px;left:-4px}.life-counter-page .brand-mark span:first-child{top:11px;left:11px;width:8px;height:8px}}
+
+/* Calendar page: use the same command-deck language as manager and life counter. */
+:root{--imperial-amber:#f0b35a;--warning-red:#dc5d45;--holo-blue:#78c8cf;--deck-black:#0a0c0f}
+body.calendar-page{background:var(--deck-black,#0a0c0f);color:var(--text);background-image:radial-gradient(ellipse at 75% 4%,#7d3d252b 0,transparent 23%),radial-gradient(ellipse at 15% 100%,#162b342e 0,transparent 32%),linear-gradient(130deg,#080a0d 0%,#12161a 50%,#090b0e 100%)}
+body.calendar-page:before{opacity:.22;background-image:radial-gradient(#d9e8e622 .65px,transparent .8px);background-size:31px 31px}
+body.calendar-page:after{content:"";position:fixed;width:90px;height:90px;right:7%;top:4%;border-radius:50%;pointer-events:none;background:radial-gradient(circle at 35% 32%,#ffe1a2 0 7%,#f7b758 27%,#db6b36 62%,#7b2d26 100%);box-shadow:0 0 18px #ffc96f,0 0 70px #e56d3c66;opacity:.95}
+.calendar-page .topbar{background:#080a0de8;border-bottom-color:#715536;box-shadow:0 1px 0 #f0b35a14,0 12px 28px #0007}
+.calendar-page .topbar:after{content:"COMMAND DECK // SECTOR 7";position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);padding:0 10px;font:600 8px 'Barlow Condensed';letter-spacing:2px;white-space:nowrap}
+.calendar-page .topbar:after{background:var(--deck-black,#0a0c0f);color:#9b7650}
+.calendar-page .brand{color:var(--text)}
+.calendar-page .brand small{color:#9c8770}
+.calendar-page .brand strong span{color:var(--imperial-amber)}
+.calendar-page .brand-mark{border-color:var(--imperial-amber);box-shadow:0 0 14px #f0b35a22}
+.calendar-page .brand-mark:before,.calendar-page .brand-mark:after{background:var(--imperial-amber)}
+.calendar-page .brand-mark span:first-child{background:var(--deck-black,#0a0c0f);border-color:var(--imperial-amber)}
+.calendar-page .brand-mark span{background:var(--imperial-amber)}
+.calendar-page .brand-mark span:first-child{background:var(--deck-black);border-color:var(--imperial-amber)}
+.calendar-page .topbar-meta{color:#b08d69}
+.calendar-page .topbar-link{color:#788681}
+.calendar-page .topbar-link:hover,.calendar-page .topbar-link.active{color:var(--imperial-amber);border-color:var(--imperial-amber)}
+.calendar-page .live-dot{background:var(--warning-red);box-shadow:0 0 12px var(--warning-red)}
+.calendar-page-hero h1{color:var(--text);text-shadow:0 8px 30px #000}
+.calendar-page-hero h1 em{color:var(--imperial-amber);text-shadow:0 0 25px #f0b35a25}
+.calendar-page .hero-copy{color:#a0a9a9}
+.calendar-page .eyebrow{color:var(--imperial-amber);text-shadow:0 0 14px #f0b35a22}
+.calendar-page .eyebrow span{color:var(--holo-blue)}
+.calendar-page .panel{background:linear-gradient(145deg,#1a1c1de8,#0e1113ee);border-color:#49443b;box-shadow:0 18px 50px #0009}
+.calendar-page .panel:before{border-color:#f0b35a0b}
+.calendar-page .calendar-rule{color:var(--imperial-amber);border-color:#9c7446;background:#2a2015}
+.calendar-page .calendar-intro{border-bottom-color:#3c3c34}
+.calendar-page .calendar-orb{border-color:#8c6b43;color:var(--imperial-amber)}
+.calendar-page .calendar-intro p,.calendar-page .calendar-actions,.calendar-page .calendar-legend{color:#8b9690}
+.calendar-page .calendar-actions{border-bottom-color:#343832}
+.calendar-page .calendar-action-button{background:#172629;border-color:#4f7778;color:var(--holo-blue)}
+.calendar-page .calendar-action-button:hover:not(:disabled){background:#1d3639;border-color:var(--holo-blue)}
+.calendar-page .calendar-action-button.button-primary{background:var(--imperial-amber);border-color:var(--imperial-amber);color:#171009}
+.calendar-page .calendar-action-button.button-primary:hover:not(:disabled){background:#ffd991;border-color:#ffd991}
+.event-flyout-backdrop{background:#0009}
+.event-flyout{background:linear-gradient(150deg,#1a1c1d 0%,#0c1012 100%);border-left-color:#80613e;box-shadow:-24px 0 60px #000b}
+.event-flyout-header{border-bottom-color:#3b3932}
+.event-flyout-header .eyebrow{color:var(--imperial-amber)}
+.event-flyout-header h2{color:var(--text)}
+.event-flyout-description{color:#8d9999}
+.event-detail-list{border-color:#3b3932}
+.event-detail-row+.event-detail-row{border-top-color:#2a302d}
+.event-detail-icon{border:1px solid #80613e;border-radius:2px;background:#172629;color:var(--holo-blue)}
+.event-detail-row small{color:#8b9690}
+.event-detail-row strong{color:#d9e0d9}
+.event-flyout-action{border-color:#4f7778;border-radius:2px;background:#172629;color:var(--holo-blue)}
+.event-flyout-action:hover{border-color:var(--holo-blue);color:#d9e0d9;background:#1d3639}
+.event-flyout-action.button-primary{background:var(--imperial-amber);border-color:var(--imperial-amber);color:#171009}
+.event-flyout-action.button-primary:hover{background:#ffd991;border-color:#ffd991}
