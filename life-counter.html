@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Star Wars: Unlimited — Twin Suns Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      touch-action: manipulation;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #06080f;
+      font-family: 'Inter', sans-serif;
+      color: #f8fafc;
+    }
+    .sw-font {
+      font-family: 'Orbitron', sans-serif;
+    }
+
+    /* Spelersgrids voor 3, 4 en 5 spelers */
+    .grid-3p {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 8px;
+      padding: 8px;
+      width: 100vw;
+      height: 100vh;
+    }
+    .grid-3p > .player-slot:nth-child(3) {
+      grid-column: 1 / span 2;
+    }
+
+    .grid-4p {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 8px;
+      padding: 8px;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    .grid-5p {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      grid-template-rows: 1fr 1fr;
+      gap: 8px;
+      padding: 8px;
+      width: 100vw;
+      height: 100vh;
+    }
+    .grid-5p > .player-slot:nth-child(1) { grid-column: 1 / span 3; }
+    .grid-5p > .player-slot:nth-child(2) { grid-column: 4 / span 3; }
+    .grid-5p > .player-slot:nth-child(3) { grid-column: 1 / span 2; }
+    .grid-5p > .player-slot:nth-child(4) { grid-column: 3 / span 2; }
+    .grid-5p > .player-slot:nth-child(5) { grid-column: 5 / span 2; }
+
+    .player-slot {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #0b0f19;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 0 1.5px rgba(255,255,255,0.14), 0 8px 24px rgba(0,0,0,0.75);
+    }
+
+    /* De geroteerde speler-unit die altijd meedraait en als een liggende TCG-kaart (88:63) schaalt */
+    .tcg-unit {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border: 2px solid rgba(255,255,255,0.28);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.85);
+      transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .tcg-card-art {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .tcg-vignette {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(6, 10, 20, 0.08) 0%, rgba(6, 10, 20, 0.56) 100%);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* Centrale Command Bar (strakke SWU HUD-pil) */
+    .center-command-bar {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 45;
+      background: rgba(9, 13, 24, 0.95);
+      border: 1.5px solid rgba(250, 204, 21, 0.55);
+      border-radius: 9999px;
+      padding: 7px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9), 0 0 18px rgba(250, 204, 21, 0.2);
+      backdrop-filter: blur(10px);
+      cursor: pointer;
+      transition: transform 0.15s ease, border-color 0.2s ease;
+    }
+    .center-command-bar:active {
+      transform: translate(-50%, -50%) scale(0.95);
+    }
+
+    /* Gouden rand voor de speler die de vorige ronde Initiative had geclaimd */
+    .prev-init-gold {
+      border: 2px solid #facc15 !important;
+      box-shadow: 0 0 14px rgba(250, 204, 21, 0.95), inset 0 0 6px rgba(250, 204, 21, 0.45) !important;
+    }
+
+    .damage-number {
+      -webkit-text-stroke: 2.5px rgba(0, 0, 0, 0.85);
+      text-shadow: 0 4px 20px rgba(0,0,0,0.95), 0 2px 6px rgba(0,0,0,1);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tap-zone:active {
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.4);
+      border-radius: 9999px;
+    }
+  </style>
+  <style>
+    /* Shared Holotable visual language: amber instrumentation, angular panels, and the deck-black surface. */
+    .life-counter-page {
+      background: var(--deck-black, #0a0c0f);
+      background-image: radial-gradient(ellipse at 78% 4%, #7d3d252b 0, transparent 23%), linear-gradient(130deg, #080a0d 0%, #12161a 50%, #090b0e 100%);
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    .life-counter-page .player-slot {
+      border-radius: 2px;
+      background: #111719;
+      box-shadow: inset 0 0 0 1px #f0b35a12, 0 8px 24px #000b;
+    }
+    .life-counter-page .tcg-unit {
+      border-radius: 4px;
+      box-shadow: 0 10px 30px #000d, 0 0 0 1px #f0b35a12;
+    }
+    .life-counter-page .center-command-bar {
+      border-color: #f0b35a99;
+      border-radius: 4px;
+      background: #0f1214f5;
+      box-shadow: 0 10px 30px #000d, 0 0 18px #f0b35a22;
+    }
+    .life-counter-page .text-amber-400,
+    .life-counter-page .text-amber-300 { color: var(--imperial-amber, #f0b35a) !important; }
+    .life-counter-page .bg-amber-400 { background-color: var(--imperial-amber, #f0b35a) !important; }
+  </style>
+</head>
+<body class="life-counter-page">
+
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="Holotable home">
+      <span class="brand-mark"><span></span><span></span></span>
+      <span><strong>HOLO<span>TABLE</span></strong><small>TOURNAMENT CONTROL</small></span>
+    </a>
+    <div class="topbar-meta">
+      <a class="topbar-link" href="manager.html">MANAGER</a>
+      <a class="topbar-link" href="index.html">CALENDAR</a>
+      <a class="topbar-link active" href="life-counter.html">LIFE COUNTER</a>
+      <span class="live-dot"></span>
+      <span>LOCAL SESSION</span>
+    </div>
+  </header>
+
+  <!-- SPELERS GRID -->
+  <main id="playersGrid" class="grid-4p"></main>
+
+  <!-- CENTRALE HUD PIL -->
+  <button id="centerHudBtn" onclick="openMenuModal()" class="center-command-bar" title="Open Menu">
+    <div class="flex items-center gap-2">
+      <span class="sw-font text-[11px] font-extrabold tracking-widest text-amber-400">R<span id="hudRound">1</span></span>
+      <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+      <span id="hudTimer" class="sw-font text-[11px] font-bold tracking-wider text-slate-200">00:00</span>
+    </div>
+    <div class="w-[1px] h-3.5 bg-slate-700"></div>
+    <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Menu</span>
+  </button>
+
+  <!-- TOAST MELDING VOOR REGROUP / BLAST -->
+  <div id="toastBanner" class="fixed top-4 left-1/2 -translate-x-1/2 z-[80] hidden pointer-events-none">
+    <div class="bg-slate-950/95 border border-amber-400/70 text-amber-300 px-5 py-2.5 rounded-full shadow-2xl sw-font text-xs font-bold tracking-wider uppercase">
+      <span id="toastText"></span>
+    </div>
+  </div>
+
+  <!-- CENTRAAL MENU MODAL -->
+  <div id="menuModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700/90 rounded-2xl max-w-xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+        <div>
+          <h2 class="sw-font text-base font-extrabold tracking-wider text-amber-400 uppercase">Star Wars: Unlimited — Twin Suns</h2>
+          <p class="text-xs text-slate-400 mt-0.5">Spelinstellingen, Spelduur &amp; Bases</p>
+        </div>
+        <button onclick="closeMenuModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200">
+          Sluiten
+        </button>
+      </div>
+
+      <div class="p-5 overflow-y-auto custom-scroll space-y-5">
+        <!-- SPELDUUR & RONDE KLOK -->
+        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Spelduur &amp; Ronde</div>
+              <div class="flex items-baseline gap-3 mt-1">
+                <span id="menuTimerDisplay" class="sw-font text-2xl font-black text-white">00:00:00</span>
+                <span class="text-xs font-bold text-amber-400">Ronde <span id="menuRoundDisplay">1</span></span>
+              </div>
+              <div id="menuAvgRound" class="text-[11px] text-slate-400 mt-0.5">Gemiddeld per ronde: 00:00</div>
+              <div id="wakeLockStatusText" class="text-[10px] font-bold text-emerald-400 mt-1">Scherm-sluimerstand: Geblokkeerd (Scherm blijft aan)</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="pauseTimerBtn" onclick="toggleTimerPause()" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 border border-slate-700">
+                Pauzeer Klok
+              </button>
+              <button onclick="resetTimerOnly()" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 border border-slate-700">
+                Reset Klok
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- AANTAL SPELERS (3, 4 OF 5) -->
+        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4">
+          <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2.5">Aantal Spelers aan Tafel</div>
+          <div class="grid grid-cols-3 gap-2.5">
+            <button onclick="setPlayerCount(3)" id="btnCount3" class="py-2.5 rounded-lg font-bold text-xs border transition">3 Spelers</button>
+            <button onclick="setPlayerCount(4)" id="btnCount4" class="py-2.5 rounded-lg font-bold text-xs border transition">4 Spelers</button>
+            <button onclick="setPlayerCount(5)" id="btnCount5" class="py-2.5 rounded-lg font-bold text-xs border transition">5 Spelers</button>
+          </div>
+        </div>
+
+        <!-- BASES PER SPELER SNEL WISSELEN -->
+        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4">
+          <div class="flex items-center justify-between mb-2.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Bases &amp; Rotatie per Speler</span>
+            <span id="baseTotalBadge" class="text-[11px] font-semibold text-amber-400">Bases beschikbaar</span>
+          </div>
+          <div id="menuPlayerBaseList" class="space-y-2"></div>
+        </div>
+
+        <!-- SPEL ACTIES -->
+        <div class="grid grid-cols-2 gap-3">
+          <button onclick="forceRegroupReset(); closeMenuModal();" class="py-3 px-4 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-amber-300 font-bold text-xs uppercase tracking-wider">
+            Volgende Ronde (Regroup)
+          </button>
+          <button onclick="resetFullGame()" class="py-3 px-4 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/50 text-rose-300 font-bold text-xs uppercase tracking-wider">
+            Nieuw Potje (Alles 0 Schade)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BASE KIEZER MODAL -->
+  <div id="baseModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden items-center justify-center p-3 sm:p-5">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-4xl w-full h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <!-- Header -->
+      <div class="px-4 py-3.5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 bg-slate-950">
+        <div>
+          <h3 id="baseModalTitle" class="sw-font text-sm sm:text-base font-extrabold text-amber-400 uppercase tracking-wider">Kies Base</h3>
+          <p id="baseModalCurrentInfo" class="text-[11px] text-slate-300 mt-0.5">Huidige Base: —</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="liveSyncBtn" onclick="syncOfficialBases()" class="px-3 py-1.5 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-400/50 text-indigo-200 text-xs font-bold transition">
+            🔄 Zoek live naar nieuwe Bases
+          </button>
+          <button onclick="closeBaseModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200">
+            Sluiten
+          </button>
+        </div>
+      </div>
+
+      <!-- Zoekbalk & Filters -->
+      <div class="p-3.5 border-b border-slate-800 bg-slate-900/90 space-y-2.5">
+        <div class="relative">
+          <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm pointer-events-none">🔍</span>
+          <input
+            id="baseSearchInput"
+            type="text"
+            oninput="renderBaseGallery()"
+            placeholder="Zoek op Base of Planeet (bijv. Coruscant, Tatooine, Endor, Mandalore, Naboo, Jedha)..."
+            class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-amber-400"
+          />
+        </div>
+
+        <div class="flex flex-wrap items-center gap-1.5" id="setFilterBar"></div>
+        <div class="flex flex-wrap items-center gap-1.5" id="aspectFilterBar"></div>
+      </div>
+
+      <!-- Base Grid -->
+      <div id="baseGalleryGrid" class="p-4 overflow-y-auto custom-scroll grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5 flex-1 content-start auto-rows-max"></div>
+
+      <!-- Eigen URL / Bestand onderaan -->
+      <div class="px-4 py-2.5 border-t border-slate-800 bg-slate-950 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div class="flex items-center gap-2 flex-1 min-w-[220px]">
+          <input id="customBaseUrl" type="text" placeholder="Plak eigen kaart-afbeelding URL..." class="flex-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs" />
+          <input id="customBaseHp" type="number" value="30" min="15" max="40" class="w-16 px-2 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs text-center" title="Max HP" />
+          <button onclick="applyCustomUrlBase()" class="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold">Stel in</button>
+        </div>
+        <label class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold cursor-pointer">
+          Eigen afbeelding kiezen
+          <input type="file" accept="image/*" class="hidden" onchange="applyCustomFileBase(event)" />
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ============================================================================
+    // 1. COMPLETE STAR WARS: UNLIMITED BASE DATABASE (GEVERIFIEERDE NUMMERS & ASPECTEN)
+    //    Elke Base heeft zijn exacte officiële set-code en kaartnummer (zodat er nooit
+    //    Units of verkeerde kleuren worden geladen), aspect, HP én de Planeet/Locatie.
+    // ============================================================================
+    const SETS_META = [
+      { code: 'ALL', label: 'Alle Sets' },
+      { code: 'SOR', label: 'Set 1: SOR' },
+      { code: 'SHD', label: 'Set 2: SHD' },
+      { code: 'TWI', label: 'Set 3: TWI' },
+      { code: 'JTL', label: 'Set 4: JTL' },
+      { code: 'LOF', label: 'Set 5: LOF' },
+      { code: 'SEC', label: 'Set 6: SEC' },
+      { code: 'LAW', label: 'Set 7: LAW' },
+      { code: 'ASH', label: 'Set 8: ASH' },
+      { code: 'HMW', label: 'Set 9: HMW' },
+      { code: 'TS26', label: 'Twin Suns / Special' }
+    ];
+
+    const ASPECT_META = [
+      { code: 'ALL', label: 'Alle Aspecten' },
+      { code: 'Vigilance', label: 'Vigilance (Blauw)' },
+      { code: 'Command', label: 'Command (Groen)' },
+      { code: 'Aggression', label: 'Aggression (Rood)' },
+      { code: 'Cunning', label: 'Cunning (Geel)' },
+      { code: 'Neutral', label: 'Geen Aspect' }
+    ];
+
+    const ASPECT_COLORS = {
+      Vigilance:  { hex: '#2563eb', dark: '#0c1f4d', border: '#60a5fa' },
+      Command:    { hex: '#16a34a', dark: '#082e18', border: '#4ade80' },
+      Aggression: { hex: '#dc2626', dark: '#450a0a', border: '#f87171' },
+      Cunning:    { hex: '#d97706', dark: '#422006', border: '#facc15' },
+      Neutral:    { hex: '#475569', dark: '#1e293b', border: '#94a3b8' }
+    };
+
+    const INITIAL_BASES = [
+      // SET 1: Spark of Rebellion (SOR 019 - 030) — 12 Bases
+      { id: 'SOR-019', set: 'SOR', num: '019', name: 'Security Complex', planet: 'Scarif', aspect: 'Vigilance', hp: 25 },
+      { id: 'SOR-020', set: 'SOR', num: '020', name: 'Capital City', planet: 'Lothal', aspect: 'Vigilance', hp: 30 },
+      { id: 'SOR-021', set: 'SOR', num: '021', name: 'Dagobah Swamp', planet: 'Dagobah', aspect: 'Vigilance', hp: 30 },
+      { id: 'SOR-022', set: 'SOR', num: '022', name: 'Energy Conversion Lab', planet: 'Eadu', aspect: 'Command', hp: 25 },
+      { id: 'SOR-023', set: 'SOR', num: '023', name: 'Command Center', planet: 'Death Star', aspect: 'Command', hp: 30 },
+      { id: 'SOR-024', set: 'SOR', num: '024', name: 'Echo Base', planet: 'Hoth', aspect: 'Command', hp: 30 },
+      { id: 'SOR-025', set: 'SOR', num: '025', name: 'Tarkintown', planet: 'Lothal', aspect: 'Aggression', hp: 25 },
+      { id: 'SOR-026', set: 'SOR', num: '026', name: 'Catacombs of Cadera', planet: 'Jedha', aspect: 'Aggression', hp: 30 },
+      { id: 'SOR-027', set: 'SOR', num: '027', name: 'Kestro City', planet: 'Vardos', aspect: 'Aggression', hp: 30 },
+      { id: 'SOR-028', set: 'SOR', num: '028', name: 'Jedha City', planet: 'Jedha', aspect: 'Cunning', hp: 25 },
+      { id: 'SOR-029', set: 'SOR', num: '029', name: "Administrator's Tower", planet: 'Cloud City / Bespin', aspect: 'Cunning', hp: 30 },
+      { id: 'SOR-030', set: 'SOR', num: '030', name: 'Chopper Base', planet: 'Atollon', aspect: 'Cunning', hp: 30 },
+
+      // SET 2: Shadows of the Galaxy (SHD 019 - 026) — Exact 8 Bases (027+ zijn Units!)
+      { id: 'SHD-019', set: 'SHD', num: '019', name: 'Remnant Science Facility', planet: 'Nevarro', aspect: 'Vigilance', hp: 30 },
+      { id: 'SHD-020', set: 'SHD', num: '020', name: 'Remote Village', planet: 'Sorgan', aspect: 'Vigilance', hp: 30 },
+      { id: 'SHD-021', set: 'SHD', num: '021', name: "Maz Kanata's Castle", planet: 'Takodana', aspect: 'Command', hp: 30 },
+      { id: 'SHD-022', set: 'SHD', num: '022', name: 'Nevarro City', planet: 'Nevarro', aspect: 'Command', hp: 30 },
+      { id: 'SHD-023', set: 'SHD', num: '023', name: 'Death Watch Hideout', planet: 'Concordia / Mandalore', aspect: 'Aggression', hp: 30 },
+      { id: 'SHD-024', set: 'SHD', num: '024', name: 'Spice Mines', planet: 'Kessel', aspect: 'Aggression', hp: 30 },
+      { id: 'SHD-025', set: 'SHD', num: '025', name: 'Coronet City', planet: 'Corellia', aspect: 'Cunning', hp: 30 },
+      { id: 'SHD-026', set: 'SHD', num: '026', name: "Jabba's Palace", planet: 'Tatooine', aspect: 'Cunning', hp: 30 },
+
+      // SET 3: Twilight of the Republic (TWI 019 - 030) — 12 Bases met exacte kaartnummers
+      { id: 'TWI-019', set: 'TWI', num: '019', name: 'Pau City', planet: 'Utapau', aspect: 'Vigilance', hp: 26 },
+      { id: 'TWI-020', set: 'TWI', num: '020', name: 'Sundari', planet: 'Mandalore', aspect: 'Vigilance', hp: 30 },
+      { id: 'TWI-021', set: 'TWI', num: '021', name: 'The Crystal City', planet: 'Christophsis', aspect: 'Vigilance', hp: 30 },
+      { id: 'TWI-022', set: 'TWI', num: '022', name: 'Droid Manufactory', planet: 'Geonosis', aspect: 'Command', hp: 24 },
+      { id: 'TWI-023', set: 'TWI', num: '023', name: 'Lair of Grievous', planet: 'Vassek', aspect: 'Command', hp: 30 },
+      { id: 'TWI-024', set: 'TWI', num: '024', name: 'Tipoca City', planet: 'Kamino', aspect: 'Command', hp: 30 },
+      { id: 'TWI-025', set: 'TWI', num: '025', name: 'Shadow Collective Camp', planet: 'Zanbar', aspect: 'Aggression', hp: 25 },
+      { id: 'TWI-026', set: 'TWI', num: '026', name: 'KCM Mining Facility', planet: 'Subterrel', aspect: 'Aggression', hp: 30 },
+      { id: 'TWI-027', set: 'TWI', num: '027', name: 'The Nest', planet: 'Anaxes', aspect: 'Aggression', hp: 30 },
+      { id: 'TWI-028', set: 'TWI', num: '028', name: 'Petranaki Arena', planet: 'Geonosis', aspect: 'Cunning', hp: 26 },
+      { id: 'TWI-029', set: 'TWI', num: '029', name: 'Level 1313', planet: 'Coruscant', aspect: 'Cunning', hp: 30 },
+      { id: 'TWI-030', set: 'TWI', num: '030', name: 'Pyke Palace', planet: 'Oba Diah', aspect: 'Cunning', hp: 30 },
+
+      // SET 4: Jump to Lightspeed (JTL 019 - 031) — 13 Bases (032+ zijn Units!)
+      { id: 'JTL-019', set: 'JTL', num: '019', name: 'City in the Clouds', planet: 'Cloud City / Bespin', aspect: 'Vigilance', hp: 30 },
+      { id: 'JTL-020', set: 'JTL', num: '020', name: 'Shield Generator Complex', planet: 'Endor', aspect: 'Vigilance', hp: 30 },
+      { id: 'JTL-021', set: 'JTL', num: '021', name: 'Colossus', planet: 'Castilon', aspect: 'Vigilance', hp: 35 },
+      { id: 'JTL-022', set: 'JTL', num: '022', name: 'Resistance Headquarters', planet: "D'Qar", aspect: 'Command', hp: 30 },
+      { id: 'JTL-023', set: 'JTL', num: '023', name: 'Theed Palace', planet: 'Naboo', aspect: 'Command', hp: 30 },
+      { id: 'JTL-024', set: 'JTL', num: '024', name: 'Data Vault', planet: 'Scarif', aspect: 'Command', hp: 33 },
+      { id: 'JTL-025', set: 'JTL', num: '025', name: 'Thermal Oscillator', planet: 'Starkiller Base / Ilum', aspect: 'Aggression', hp: 27 },
+      { id: 'JTL-026', set: 'JTL', num: '026', name: 'Massassi Temple', planet: 'Yavin 4', aspect: 'Aggression', hp: 30 },
+      { id: 'JTL-027', set: 'JTL', num: '027', name: 'Nadiri Dockyards', planet: 'Nadiri', aspect: 'Aggression', hp: 30 },
+      { id: 'JTL-028', set: 'JTL', num: '028', name: 'Nabat Village', planet: 'Ryloth', aspect: 'Cunning', hp: 27 },
+      { id: 'JTL-029', set: 'JTL', num: '029', name: 'Chopper Base (Atollon)', planet: 'Atollon', aspect: 'Cunning', hp: 30 },
+      { id: 'JTL-030', set: 'JTL', num: '030', name: 'Mos Eisley', planet: 'Tatooine', aspect: 'Cunning', hp: 30 },
+      { id: 'JTL-031', set: 'JTL', num: '031', name: 'Lake Country', planet: 'Naboo', aspect: 'Neutral', hp: 34 },
+
+      // SET 5: Legends of the Force (LOF 019 - 030) — 12 Bases (031+ zijn Units!)
+      { id: 'LOF-019', set: 'LOF', num: '019', name: 'Vergence Temple', planet: 'Lothal', aspect: 'Vigilance', hp: 28 },
+      { id: 'LOF-020', set: 'LOF', num: '020', name: 'Nightsister Lair', planet: 'Dathomir', aspect: 'Vigilance', hp: 30 },
+      { id: 'LOF-021', set: 'LOF', num: '021', name: 'Shadowed Undercity', planet: 'Coruscant', aspect: 'Vigilance', hp: 30 },
+      { id: 'LOF-022', set: 'LOF', num: '022', name: 'Mystic Monastery', planet: 'Mortis', aspect: 'Command', hp: 28 },
+      { id: 'LOF-023', set: 'LOF', num: '023', name: 'Jedi Temple', planet: 'Coruscant', aspect: 'Command', hp: 30 },
+      { id: 'LOF-024', set: 'LOF', num: '024', name: 'Starlight Temple', planet: 'Starlight Beacon', aspect: 'Command', hp: 30 },
+      { id: 'LOF-025', set: 'LOF', num: '025', name: 'Temple of Destruction', planet: 'Malachor', aspect: 'Aggression', hp: 28 },
+      { id: 'LOF-026', set: 'LOF', num: '026', name: 'Fortress Vader', planet: 'Mustafar', aspect: 'Aggression', hp: 30 },
+      { id: 'LOF-027', set: 'LOF', num: '027', name: 'Strangled Cliffs', planet: 'Dathomir', aspect: 'Aggression', hp: 30 },
+      { id: 'LOF-028', set: 'LOF', num: '028', name: 'Tomb of Eilram', planet: 'Zeffo', aspect: 'Cunning', hp: 28 },
+      { id: 'LOF-029', set: 'LOF', num: '029', name: 'Crystal Caves', planet: 'Ilum', aspect: 'Cunning', hp: 30 },
+      { id: 'LOF-030', set: 'LOF', num: '030', name: 'The Holy City', planet: 'Jedha', aspect: 'Cunning', hp: 30 },
+
+      // SET 6: Secrets of Power (SEC 019 - 026) — 8 Bases (027+ zijn Units!)
+      { id: 'SEC-019', set: 'SEC', num: '019', name: 'Rix Road', planet: 'Ferrix', aspect: 'Vigilance', hp: 30 },
+      { id: 'SEC-020', set: 'SEC', num: '020', name: 'Uscru Entertainment District', planet: 'Coruscant', aspect: 'Vigilance', hp: 30 },
+      { id: 'SEC-021', set: 'SEC', num: '021', name: 'Republic City', planet: 'Hosnian Prime', aspect: 'Command', hp: 30 },
+      { id: 'SEC-022', set: 'SEC', num: '022', name: 'Senate Rotunda', planet: 'Coruscant', aspect: 'Command', hp: 30 },
+      { id: 'SEC-023', set: 'SEC', num: '023', name: 'Imperial Prison Complex', planet: 'Narkina 5', aspect: 'Aggression', hp: 30 },
+      { id: 'SEC-024', set: 'SEC', num: '024', name: 'Naval Intelligence HQ', planet: 'Coruscant', aspect: 'Aggression', hp: 30 },
+      { id: 'SEC-025', set: 'SEC', num: '025', name: 'Amnesty Housing', planet: 'Coruscant', aspect: 'Cunning', hp: 30 },
+      { id: 'SEC-026', set: 'SEC', num: '026', name: 'Mount Tantiss', planet: 'Wayland', aspect: 'Cunning', hp: 30 },
+
+      // SET 7: A Lawless Time (LAW 019 - 030) — 12 Bases met exacte officiële nummers
+      { id: 'LAW-019', set: 'LAW', num: '019', name: 'Alliance Outpost', planet: 'Yavin 4', aspect: 'Vigilance', hp: 30 },
+      { id: 'LAW-020', set: 'LAW', num: '020', name: "Daimyo's Palace", planet: 'Tatooine', aspect: 'Vigilance', hp: 30 },
+      { id: 'LAW-021', set: 'LAW', num: '021', name: 'Coaxium Mine', planet: 'Kessel', aspect: 'Vigilance', hp: 28 },
+      { id: 'LAW-022', set: 'LAW', num: '022', name: 'Aldhani Garrison', planet: 'Aldhani', aspect: 'Command', hp: 30 },
+      { id: 'LAW-023', set: 'LAW', num: '023', name: 'Great Pit of Carkoon', planet: 'Tatooine', aspect: 'Command', hp: 30 },
+      { id: 'LAW-024', set: 'LAW', num: '024', name: 'Imperial Command Complex', planet: 'Scarif', aspect: 'Command', hp: 28 },
+      { id: 'LAW-025', set: 'LAW', num: '025', name: 'Contested Caverns', planet: 'Jedha', aspect: 'Aggression', hp: 30 },
+      { id: 'LAW-026', set: 'LAW', num: '026', name: 'Shipbreaking Yard', planet: 'Bracca', aspect: 'Aggression', hp: 30 },
+      { id: 'LAW-027', set: 'LAW', num: '027', name: 'Stygeon Spire', planet: 'Stygeon Prime', aspect: 'Aggression', hp: 28 },
+      { id: 'LAW-028', set: 'LAW', num: '028', name: 'Canto Bight', planet: 'Cantonica', aspect: 'Cunning', hp: 30 },
+      { id: 'LAW-029', set: 'LAW', num: '029', name: 'Citadel Research Center', planet: 'Scarif', aspect: 'Cunning', hp: 28 },
+      { id: 'LAW-030', set: 'LAW', num: '030', name: 'Partisan Hideout', planet: 'Jedha', aspect: 'Cunning', hp: 30 },
+
+      // SET 8: Ashes of the Empire (ASH 019 - 026) — 8 Bases (027+ zijn Units!)
+      { id: 'ASH-019', set: 'ASH', num: '019', name: 'Fortress of the Great Mothers', planet: 'Peridea', aspect: 'Vigilance', hp: 30 },
+      { id: 'ASH-020', set: 'ASH', num: '020', name: 'Nevarro City, Restored', planet: 'Nevarro', aspect: 'Vigilance', hp: 30 },
+      { id: 'ASH-021', set: 'ASH', num: '021', name: "Emperor's Throne Room", planet: 'Death Star', aspect: 'Command', hp: 30 },
+      { id: 'ASH-022', set: 'ASH', num: '022', name: 'Kryze Castle', planet: 'Kalevala', aspect: 'Command', hp: 30 },
+      { id: 'ASH-023', set: 'ASH', num: '023', name: 'Ancient Henge', planet: 'Seatos', aspect: 'Aggression', hp: 30 },
+      { id: 'ASH-024', set: 'ASH', num: '024', name: 'Dragonsnake Bog', planet: 'Dagobah', aspect: 'Aggression', hp: 30 },
+      { id: 'ASH-025', set: 'ASH', num: '025', name: "Emperor's Observatory", planet: 'Pillio', aspect: 'Cunning', hp: 30 },
+      { id: 'ASH-026', set: 'ASH', num: '026', name: 'Freetown', planet: 'Tatooine', aspect: 'Cunning', hp: 30 },
+
+      // SET 9: Homeworlds (HMW 019 - 026) — Zonder foutieve cross-set plaatjes zodat aspectkleur & naam altijd 100% kloppen
+      { id: 'HMW-019', set: 'HMW', num: '019', name: 'Otoh Gunga', planet: 'Naboo', aspect: 'Vigilance', hp: 30, useSvgOnly: true },
+      { id: 'HMW-020', set: 'HMW', num: '020', name: 'Mon Cala Palace', planet: 'Mon Cala', aspect: 'Vigilance', hp: 28, useSvgOnly: true },
+      { id: 'HMW-021', set: 'HMW', num: '021', name: 'Kachirho', planet: 'Kashyyyk', aspect: 'Command', hp: 30, useSvgOnly: true },
+      { id: 'HMW-022', set: 'HMW', num: '022', name: 'Aldera Royal Palace', planet: 'Alderaan', aspect: 'Command', hp: 28, useSvgOnly: true },
+      { id: 'HMW-023', set: 'HMW', num: '023', name: 'Bright Tree Village', planet: 'Endor', aspect: 'Command', hp: 30, useSvgOnly: true },
+      { id: 'HMW-024', set: 'HMW', num: '024', name: 'Tusken Camp', planet: 'Tatooine', aspect: 'Aggression', hp: 30, useSvgOnly: true },
+      { id: 'HMW-025', set: 'HMW', num: '025', name: 'Dune Sea Outpost', planet: 'Tatooine', aspect: 'Cunning', hp: 30, useSvgOnly: true },
+      { id: 'HMW-026', set: 'HMW', num: '026', name: 'Lessu Capital', planet: 'Ryloth', aspect: 'Cunning', hp: 28, useSvgOnly: true },
+
+      // TWIN SUNS 2026 DECK BASES & INTRO BATTLE HOTH (TS26) — Elk met zijn eigen unieke titel, planeet & aspectkleur
+      { id: 'TS26-009', set: 'TS26', num: '009', name: 'First Battle Memorial', planet: 'Coruscant', aspect: 'Vigilance', hp: 27, useSvgOnly: true },
+      { id: 'TS26-010', set: 'TS26', num: '010', name: "Dooku's Palace", planet: 'Serenno', aspect: 'Command', hp: 27, useSvgOnly: true },
+      { id: 'TS26-011', set: 'TS26', num: '011', name: "Executioner's Arena", planet: 'Geonosis', aspect: 'Aggression', hp: 27, useSvgOnly: true },
+      { id: 'TS26-012', set: 'TS26', num: '012', name: 'Sundari Palace', planet: 'Mandalore', aspect: 'Cunning', hp: 27, useSvgOnly: true },
+      { id: 'TS26-IBH1', set: 'TS26', num: '024', imgSet: 'SOR', imgNum: '024', name: 'Echo Base (Intro Battle: Hoth)', planet: 'Hoth', aspect: 'Command', hp: 30 }
+    ];
+
+    let allBases = [...INITIAL_BASES];
+
+    // Genereert een rijke horizontale Star Wars TCG Base-kaart (88:63) in exact de juiste Aspect-kleur met Naam + Planeet
+    function createSvgBaseDataUri(base) {
+      const col = ASPECT_COLORS[base.aspect] || ASPECT_COLORS.Neutral;
+      const safeName = (base.name || '').toUpperCase().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const safePlanet = (base.planet || '').toUpperCase().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 630">
+        <defs>
+          <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="${col.dark}"/>
+            <stop offset="52%" stop-color="#0a0f1d"/>
+            <stop offset="100%" stop-color="${col.hex}"/>
+          </linearGradient>
+          <radialGradient id="planetGlow" cx="50%" cy="44%" r="48%">
+            <stop offset="0%" stop-color="${col.border}" stop-opacity="0.48"/>
+            <stop offset="60%" stop-color="${col.hex}" stop-opacity="0.20"/>
+            <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <rect width="880" height="630" fill="url(#bg)"/>
+        <circle cx="440" cy="275" r="235" fill="url(#planetGlow)"/>
+        <circle cx="640" cy="150" r="58" fill="${col.border}" fill-opacity="0.28"/>
+        <circle cx="540" cy="185" r="30" fill="#ffffff" fill-opacity="0.22"/>
+        <path d="M0,455 Q220,370 440,420 T880,395 L880,630 L0,630 Z" fill="#050811" fill-opacity="0.84"/>
+        <polygon points="160,445 190,260 245,260 270,445" fill="${col.border}" fill-opacity="0.22"/>
+        <polygon points="395,445 425,180 455,180 485,445" fill="#080d1a" fill-opacity="0.75"/>
+        <polygon points="585,445 615,240 675,240 700,445" fill="${col.border}" fill-opacity="0.2"/>
+        <rect x="18" y="18" width="844" height="594" rx="28" fill="none" stroke="${col.border}" stroke-opacity="0.75" stroke-width="5"/>
+        <rect x="170" y="34" width="540" height="44" rx="10" fill="#060911" fill-opacity="0.88" stroke="${col.border}" stroke-opacity="0.65" stroke-width="2"/>
+        <text x="440" y="63" text-anchor="middle" fill="#ffffff" font-family="Orbitron, sans-serif" font-weight="800" font-size="21" letter-spacing="2">${safeName}</text>
+        <rect x="250" y="552" width="380" height="40" rx="12" fill="#060911" fill-opacity="0.9" stroke="${col.border}" stroke-opacity="0.7" stroke-width="2"/>
+        <text x="440" y="578" text-anchor="middle" fill="#f8fafc" font-family="Orbitron, sans-serif" font-weight="800" font-size="17" letter-spacing="3">${safePlanet}</text>
+      </svg>`;
+      return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+    }
+
+    // Geef een lijst met kandidaat-afbeeldings-URLs voor elke Base (en gegarandeerde SVG fallback)
+    function getBaseImageCandidates(base) {
+      const urls = [];
+      if (base.customImg) urls.push(base.customImg);
+
+      const setCode = (base.imgSet || base.set || 'SOR').toUpperCase();
+      const setLower = setCode.toLowerCase();
+      const numCode = String(base.imgNum || base.num || '019').padStart(3, '0');
+      const numInt = parseInt(numCode, 10);
+
+      // 1. Snelle, directe CDN-bronnen als eerste (voorkomt 404-vertragingen)
+      urls.push(`https://swudb.com/images/cards/${setCode}/${numCode}.png`);
+      urls.push(`https://swudb.com/cdn-cgi/image/width=600/images/cards/${setCode}/${numCode}.png`);
+      if (!isNaN(numInt)) {
+        urls.push(`https://swudb.com/images/cards/${setCode}/${numInt}.png`);
+      }
+      urls.push(`https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/swu/${setCode}/${setCode}_${numCode}_EN.png`);
+      urls.push(`https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/swu/${setCode}/${setCode}_${numCode}_EN.webp`);
+      urls.push(`https://www.swucards.info/images/cards/${setCode}-${numCode}.webp`);
+      urls.push(`https://www.swucards.info/images/cards/${setCode}-${numCode}.png`);
+      if (!isNaN(numInt)) {
+        urls.push(`https://api.swu-db.com/cards/${setLower}/${numInt}?format=image`);
+      }
+
+      urls.push(createSvgBaseDataUri(base));
+      return urls;
+    }
+
+    // Onthoud welke afbeeldings-URL succesvol is geladen per Base zodat deze nooit opnieuw hoeft te zoeken
+    const resolvedBaseImageMap = {};
+
+    window.handleCardImgLoad = function(imgEl, baseId) {
+      if (imgEl && imgEl.src && !imgEl.src.startsWith('data:image/svg+xml')) {
+        resolvedBaseImageMap[baseId] = imgEl.src;
+      }
+    };
+
+    window.handleCardImgError = function(imgEl, baseId) {
+      const base = allBases.find(b => b.id === baseId) || INITIAL_BASES[0];
+      const candidates = getBaseImageCandidates(base);
+      const currentIdx = parseInt(imgEl.dataset.fallbackIdx || '0', 10);
+      const nextIdx = currentIdx + 1;
+      if (nextIdx < candidates.length) {
+        imgEl.dataset.fallbackIdx = String(nextIdx);
+        imgEl.src = candidates[nextIdx];
+      }
+    };
+
+    function getBestInitialBaseImage(base) {
+      if (resolvedBaseImageMap[base.id]) {
+        return { src: resolvedBaseImageMap[base.id], idx: 0 };
+      }
+      const candidates = getBaseImageCandidates(base);
+      return { src: candidates[0], idx: 0 };
+    }
+
+    // ============================================================================
+    // 2. SPELSTATUS, SPELERS & TWIN SUNS TOKEN LOGICA
+    // ============================================================================
+    const DEFAULT_ROTATIONS = {
+      3: [90, -90, 0],
+      4: [90, -90, 90, -90],
+      5: [180, 180, 90, 0, -90]
+    };
+
+    let state = {
+      playerCount: 4,
+      round: 1,
+      elapsedSeconds: 0,
+      timerPaused: false,
+      previousInitPlayerId: 0,
+      players: [
+        { id: 0, damage: 0, baseId: 'SOR-028', rotation: 90, claimedToken: null, l1: false, l2: false, epicBase: false },
+        { id: 1, damage: 0, baseId: 'SOR-025', rotation: -90, claimedToken: null, l1: false, l2: false, epicBase: false },
+        { id: 2, damage: 0, baseId: 'SOR-022', rotation: 90, claimedToken: null, l1: false, l2: false, epicBase: false },
+        { id: 3, damage: 0, baseId: 'SOR-019', rotation: -90, claimedToken: null, l1: false, l2: false, epicBase: false },
+        { id: 4, damage: 0, baseId: 'LOF-023', rotation: 0, claimedToken: null, l1: false, l2: false, epicBase: false }
+      ]
+    };
+
+    try {
+      const saved = localStorage.getItem('swu_twinsuns_v5');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && Array.isArray(parsed.players) && parsed.players.length === 5) {
+          state = { ...state, ...parsed };
+        }
+      }
+    } catch (e) {}
+
+    function saveState() {
+      try {
+        localStorage.setItem('swu_twinsuns_v5', JSON.stringify(state));
+      } catch (e) {}
+    }
+
+    function getBaseById(id) {
+      return allBases.find(b => b.id === id) || INITIAL_BASES[0];
+    }
+
+    function showToast(msg) {
+      const banner = document.getElementById('toastBanner');
+      const text = document.getElementById('toastText');
+      if (!banner || !text) return;
+      text.textContent = msg;
+      banner.classList.remove('hidden');
+      clearTimeout(window._toastTimeout);
+      window._toastTimeout = setTimeout(() => {
+        banner.classList.add('hidden');
+      }, 2400);
+    }
+
+    function changeDamage(playerId, delta) {
+      const p = state.players[playerId];
+      if (!p) return;
+      p.damage = Math.max(0, p.damage + delta);
+      saveState();
+      updatePlayersDOM();
+    }
+
+    function rotatePlayer(playerId) {
+      const p = state.players[playerId];
+      if (!p) return;
+      const cycle = [0, 90, 180, -90];
+      const idx = cycle.indexOf(p.rotation);
+      p.rotation = cycle[(idx + 1) % cycle.length];
+      saveState();
+      updatePlayersDOM();
+      fitAllTcgUnits();
+    }
+
+    function toggleAbility(playerId, key) {
+      const p = state.players[playerId];
+      if (!p) return;
+      p[key] = !p[key];
+      saveState();
+      updatePlayersDOM();
+    }
+
+    // ============================================================================
+    // 3. TWIN SUNS TOKEN CLAIM & PASS LOGICA
+    // ============================================================================
+    function claimToken(playerId, tokenType) {
+      const activePlayers = state.players.slice(0, state.playerCount);
+      const player = activePlayers[playerId];
+      if (!player) return;
+
+      // Tik nogmaals op eigen gekozen token om te annuleren bij een misklik
+      if (player.claimedToken === tokenType && tokenType !== 'pass') {
+        player.claimedToken = null;
+        saveState();
+        updatePlayersDOM();
+        return;
+      }
+
+      // Als speler al een token heeft geclaimd, kan die geen andere token meer kiezen
+      if (player.claimedToken !== null) {
+        return;
+      }
+
+      // Controleer of een andere speler deze token al heeft geclaimd
+      if (tokenType !== 'pass') {
+        const alreadyTaken = activePlayers.some(p => p.claimedToken === tokenType);
+        if (alreadyTaken) return;
+      }
+
+      player.claimedToken = tokenType;
+
+      // Bij Blast krijgt elke andere actieve speler direct +1 schade
+      if (tokenType === 'blast') {
+        activePlayers.forEach(other => {
+          if (other.id !== playerId) {
+            other.damage += 1;
+          }
+        });
+        showToast('Blast geclaimd: +1 schade op alle andere Bases');
+      }
+
+      saveState();
+      updatePlayersDOM();
+
+      // Controleer of iedereen klaar is (bij 3 spelers zodra alle 3 een token hebben; bij 4-5 spelers zodra de laatste Pass doet)
+      const allDone = activePlayers.every(p => p.claimedToken !== null);
+      if (allDone) {
+        setTimeout(() => {
+          completeRoundAndResetTokens();
+        }, 420);
+      }
+    }
+
+    function completeRoundAndResetTokens() {
+      const activePlayers = state.players.slice(0, state.playerCount);
+      const initClaimer = activePlayers.find(p => p.claimedToken === 'init');
+      if (initClaimer) {
+        state.previousInitPlayerId = initClaimer.id;
+      }
+      activePlayers.forEach(p => {
+        p.claimedToken = null;
+      });
+      state.round += 1;
+      saveState();
+      updatePlayersDOM();
+      updateHudDisplays();
+      showToast(`Regroup Phase — Ronde ${state.round} gestart`);
+    }
+
+    function forceRegroupReset() {
+      completeRoundAndResetTokens();
+    }
+
+    // ============================================================================
+    // 4. RENDERING VAN SPELERS EN FLIKKERVRIJE DOM-UPDATES (88:63 RATIO)
+    // ============================================================================
+    function buildTokenButtonsHtml(player, activePlayers) {
+      const takenTokens = {
+        init: activePlayers.find(p => p.claimedToken === 'init')?.id ?? null,
+        blast: activePlayers.find(p => p.claimedToken === 'blast')?.id ?? null,
+        plan: activePlayers.find(p => p.claimedToken === 'plan')?.id ?? null
+      };
+      const allThreeMainTokensTaken =
+        takenTokens.init !== null && takenTokens.blast !== null && takenTokens.plan !== null;
+
+      const hasClaimedAny = player.claimedToken !== null;
+      const showPassBtn = !hasClaimedAny && allThreeMainTokensTaken;
+      const hadPrevInit = state.previousInitPlayerId === player.id;
+
+      const makeTokenBtn = (type, label) => {
+        const isMine = player.claimedToken === type;
+        const takenByOther = takenTokens[type] !== null && takenTokens[type] !== player.id;
+        const lockedByOtherChoice = hasClaimedAny && !isMine;
+        const disabled = takenByOther || lockedByOtherChoice;
+
+        let btnClasses = 'px-2.5 py-1 rounded-md text-[10px] sm:text-[11px] sw-font font-extrabold uppercase tracking-wider transition border ';
+        if (isMine) {
+          btnClasses += 'bg-amber-400 text-slate-950 border-amber-200 shadow-lg scale-105 ';
+        } else if (disabled) {
+          btnClasses += 'bg-slate-950/45 text-slate-500 border-slate-800/60 opacity-40 cursor-not-allowed ';
+        } else {
+          btnClasses += 'bg-slate-950/80 hover:bg-slate-900 text-slate-100 border-white/25 ';
+        }
+
+        if (type === 'init' && hadPrevInit) {
+          btnClasses += 'prev-init-gold ';
+        }
+
+        return `<button
+          onclick="event.stopPropagation(); claimToken(${player.id}, '${type}')"
+          ${disabled ? 'disabled' : ''}
+          class="${btnClasses}"
+        >${label}</button>`;
+      };
+
+      const passBtnHtml = showPassBtn
+        ? `<button
+            onclick="event.stopPropagation(); claimToken(${player.id}, 'pass')"
+            class="px-2.5 py-1 rounded-md text-[10px] sm:text-[11px] sw-font font-extrabold uppercase tracking-wider bg-emerald-400 text-slate-950 border border-emerald-200 shadow-lg animate-pulse"
+          >Pass</button>`
+        : (player.claimedToken === 'pass'
+            ? `<button class="px-2.5 py-1 rounded-md text-[10px] sm:text-[11px] sw-font font-extrabold uppercase tracking-wider bg-emerald-400 text-slate-950 border border-emerald-200 shadow-lg">Pass</button>`
+            : '');
+
+      return `
+        ${makeTokenBtn('init', 'Init')}
+        ${makeTokenBtn('blast', 'Blast')}
+        ${makeTokenBtn('plan', 'Plan')}
+        ${passBtnHtml}
+      `;
+    }
+
+    function renderPlayers() {
+      const grid = document.getElementById('playersGrid');
+      if (!grid) return;
+
+      const activePlayers = state.players.slice(0, state.playerCount);
+
+      // Als het aantal spelersvakken al klopt, werk dan alleen de waarden bij zonder de <img> opnieuw te maken
+      if (grid.children.length === state.playerCount && grid.className === `grid-${state.playerCount}p`) {
+        updatePlayersDOM();
+        fitAllTcgUnits();
+        return;
+      }
+
+      grid.className = `grid-${state.playerCount}p`;
+
+      grid.innerHTML = activePlayers.map(player => {
+        const base = getBaseById(player.baseId);
+        const initialImg = getBestInitialBaseImage(base);
+        const aspectStyle = ASPECT_COLORS[base.aspect] || ASPECT_COLORS.Neutral;
+        const isLethal = player.damage >= base.hp;
+
+        return `
+          <div class="player-slot" data-slot="${player.id}">
+            <div
+              id="tcgUnit-${player.id}"
+              class="tcg-unit"
+              data-rot="${player.rotation}"
+              data-base-id="${base.id}"
+              style="transform: rotate(${player.rotation}deg); border-color: ${aspectStyle.border}; background-color: #0b0f19;"
+            >
+              <img
+                id="tcgArt-${player.id}"
+                src="${initialImg.src}"
+                alt="${base.name}"
+                data-fallback-idx="${initialImg.idx}"
+                onload="handleCardImgLoad(this, '${base.id}')"
+                onerror="handleCardImgError(this, '${base.id}')"
+                class="tcg-card-art"
+              />
+              <div id="tcgVignette-${player.id}" class="tcg-vignette" style="${isLethal ? 'background: radial-gradient(circle, rgba(127,29,29,0.35) 0%, rgba(127,29,29,0.78) 100%);' : ''}"></div>
+
+              <!-- BOVENSTE BALK: Verander Base knop (+ Planeet eronder) links + EPIC/L1/L2 & Rotatie rechts -->
+              <div class="relative z-20 flex items-start justify-between px-2.5 pt-2 pointer-events-auto gap-1">
+                <div class="flex flex-col items-start max-w-[54%] min-w-0">
+                  <button
+                    id="baseNameBtn-${player.id}"
+                    onclick="event.stopPropagation(); openBaseModal(${player.id})"
+                    class="px-2.5 py-1 rounded-md bg-slate-950/90 hover:bg-slate-900 border border-white/25 text-[10px] sm:text-[11px] font-bold text-slate-100 truncate w-full text-left shadow"
+                    title="Verander Base"
+                  >
+                    ${base.name} • ${base.hp}
+                  </button>
+                  <div
+                    id="basePlanetBadge-${player.id}"
+                    onclick="event.stopPropagation(); openBaseModal(${player.id})"
+                    class="mt-0.5 px-2 py-0.5 rounded bg-slate-950/85 border border-white/15 text-[8px] sm:text-[9px] sw-font font-extrabold uppercase tracking-wider text-amber-300 truncate max-w-full shadow cursor-pointer"
+                    title="Planeet"
+                  >
+                    ${base.planet || 'Onbekend'}
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-1 shrink-0">
+                  <button
+                    id="btnEpic-${player.id}"
+                    onclick="event.stopPropagation(); toggleAbility(${player.id}, 'epicBase')"
+                    class="px-1.5 py-0.5 rounded text-[9px] font-extrabold border transition ${player.epicBase ? 'bg-purple-600 text-white border-purple-300 shadow-[0_0_10px_rgba(147,51,234,0.8)]' : 'bg-slate-950/85 text-slate-300 border-white/20 hover:bg-slate-900'}"
+                    title="Base Epic Action gebruikt"
+                  >EPIC</button>
+                  <button
+                    id="btnL1-${player.id}"
+                    onclick="event.stopPropagation(); toggleAbility(${player.id}, 'l1')"
+                    class="px-1.5 py-0.5 rounded text-[9px] font-extrabold border transition ${player.l1 ? 'bg-emerald-500 text-slate-950 border-emerald-200 shadow-[0_0_10px_rgba(16,185,129,0.75)]' : 'bg-slate-950/85 text-slate-300 border-white/20 hover:bg-slate-900'}"
+                    title="Leader 1 Epic Action gebruikt"
+                  >L1</button>
+                  <button
+                    id="btnL2-${player.id}"
+                    onclick="event.stopPropagation(); toggleAbility(${player.id}, 'l2')"
+                    class="px-1.5 py-0.5 rounded text-[9px] font-extrabold border transition ${player.l2 ? 'bg-emerald-500 text-slate-950 border-emerald-200 shadow-[0_0_10px_rgba(16,185,129,0.75)]' : 'bg-slate-950/85 text-slate-300 border-white/20 hover:bg-slate-900'}"
+                    title="Leader 2 Epic Action gebruikt"
+                  >L2</button>
+                  <button
+                    onclick="event.stopPropagation(); rotatePlayer(${player.id})"
+                    class="px-1.5 py-0.5 rounded bg-slate-950/85 hover:bg-slate-900 text-slate-300 border border-white/20 text-[9px] font-extrabold"
+                    title="Draai speler-vlak"
+                  >90°</button>
+                </div>
+              </div>
+
+              <!-- MIDDEN: LINKS (-1) / SCHADE GETAL / RECHTS (+1) -->
+              <div class="relative z-10 flex-1 grid grid-cols-2 items-center w-full h-full">
+                <div
+                  onclick="changeDamage(${player.id}, -1)"
+                  class="tap-zone h-full flex items-center justify-start pl-8 sm:pl-12 md:pl-16 cursor-pointer select-none"
+                >
+                  <span class="sw-font text-2xl sm:text-4xl font-black text-white/90 drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">-</span>
+                </div>
+                <div
+                  onclick="changeDamage(${player.id}, 1)"
+                  class="tap-zone h-full flex items-center justify-end pr-8 sm:pr-12 md:pr-16 cursor-pointer select-none"
+                >
+                  <span class="sw-font text-2xl sm:text-4xl font-black text-white/90 drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">+</span>
+                </div>
+
+                <!-- Centraal Schadegetal (witte tekst met zwarte schaduw, 1 slag groter, onderkant op de middenlijn) -->
+                <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
+                  <span
+                    id="dmgValue-${player.id}"
+                    class="sw-font text-5xl sm:text-6xl md:text-7xl font-black tracking-tight leading-none damage-number -translate-y-2.5 sm:-translate-y-3.5 ${isLethal ? 'text-rose-400' : 'text-white'}"
+                  >
+                    ${player.damage}
+                  </span>
+                </div>
+              </div>
+
+              <!-- ONDERSTE BALK: TWIN SUNS TOKENS (Init, Blast, Plan & conditionele Pass) -->
+              <div id="tokenBar-${player.id}" class="relative z-20 flex items-center justify-center gap-1.5 px-2.5 pb-2 pointer-events-auto">
+                ${buildTokenButtonsHtml(player, activePlayers)}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      fitAllTcgUnits();
+    }
+
+    // Werkt alleen de gewijzigde teksten/knoppen bij zonder de <img> van de Base ooit te herladen!
+    function updatePlayersDOM() {
+      const grid = document.getElementById('playersGrid');
+      if (!grid || grid.children.length !== state.playerCount) {
+        renderPlayers();
+        return;
+      }
+
+      const activePlayers = state.players.slice(0, state.playerCount);
+
+      activePlayers.forEach(player => {
+        const base = getBaseById(player.baseId);
+        const aspectStyle = ASPECT_COLORS[base.aspect] || ASPECT_COLORS.Neutral;
+        const isLethal = player.damage >= base.hp;
+
+        const unitEl = document.getElementById(`tcgUnit-${player.id}`);
+        if (unitEl) {
+          unitEl.setAttribute('data-rot', String(player.rotation));
+          unitEl.style.transform = `rotate(${player.rotation}deg)`;
+          unitEl.style.borderColor = aspectStyle.border;
+
+          // Alleen als de speler daadwerkelijk een andere Base heeft gekozen, verversen we de <img>
+          const currentRenderedBaseId = unitEl.getAttribute('data-base-id');
+          if (currentRenderedBaseId !== base.id) {
+            unitEl.setAttribute('data-base-id', base.id);
+            const artEl = document.getElementById(`tcgArt-${player.id}`);
+            if (artEl) {
+              const initialImg = getBestInitialBaseImage(base);
+              artEl.dataset.fallbackIdx = String(initialImg.idx);
+              artEl.alt = base.name;
+              artEl.setAttribute('onload', `handleCardImgLoad(this, '${base.id}')`);
+              artEl.setAttribute('onerror', `handleCardImgError(this, '${base.id}')`);
+              artEl.src = initialImg.src;
+            }
+          }
+        }
+
+        const vignetteEl = document.getElementById(`tcgVignette-${player.id}`);
+        if (vignetteEl) {
+          vignetteEl.style.background = isLethal
+            ? 'radial-gradient(circle, rgba(127,29,29,0.35) 0%, rgba(127,29,29,0.78) 100%)'
+            : 'radial-gradient(circle at center, rgba(6, 10, 20, 0.08) 0%, rgba(6, 10, 20, 0.56) 100%)';
+        }
+
+        const nameBtn = document.getElementById(`baseNameBtn-${player.id}`);
+        if (nameBtn) nameBtn.textContent = `${base.name} • ${base.hp}`;
+
+        const planetBadge = document.getElementById(`basePlanetBadge-${player.id}`);
+        if (planetBadge) planetBadge.textContent = base.planet || 'Onbekend';
+
+        const dmgEl = document.getElementById(`dmgValue-${player.id}`);
+        if (dmgEl) {
+          dmgEl.textContent = player.damage;
+          dmgEl.className = `sw-font text-5xl sm:text-6xl md:text-7xl font-black tracking-tight leading-none damage-number -translate-y-2.5 sm:-translate-y-3.5 ${isLethal ? 'text-rose-400' : 'text-white'}`;
+        }
+
+        const btnEpic = document.getElementById(`btnEpic-${player.id}`);
+        if (btnEpic) {
+          btnEpic.className = `px-1.5 py-0.5 rounded text-[9px] font-extrabold border transition ${player.epicBase ? 'bg-purple-600 text-white border-purple-300 shadow-[0_0_10px_rgba(147,51,234,0.8)]' : 'bg-slate-950/85 text-slate-300 border-white/20 hover:bg-slate-900'}`;
+        }
+
+        const btnL1 = document.getElementById(`btnL1-${player.id}`);
+        if (btnL1) {
+          btnL1.className = `px-1.5 py-0.5 rounded text-[9px] font-extrabold border transition ${player.l1 ? 'bg-emerald-500 text-slate-950 border-emerald-200 shadow-[0_0_10px_rgba(16,185,129,0.75)]' : 'bg-slate-950/85 text-slate-300 border-white/20 hover:bg-slate-900'}`;
+        }
+
+        const btnL2 = document.getElementById(`btnL2-${player.id}`);
+        if (btnL2) {
+          btnL2.className = `px-1.5 py-0.5 rounded text-[9px] font-extrabold border transition ${player.l2 ? 'bg-emerald-500 text-slate-950 border-emerald-200 shadow-[0_0_10px_rgba(16,185,129,0.75)]' : 'bg-slate-950/85 text-slate-300 border-white/20 hover:bg-slate-900'}`;
+        }
+
+        const tokenBar = document.getElementById(`tokenBar-${player.id}`);
+        if (tokenBar) {
+          tokenBar.innerHTML = buildTokenButtonsHtml(player, activePlayers);
+        }
+      });
+    }
+
+    // Zorgt dat elk spelersvlak altijd exact in de 88:63 TCG-kaartverhouding past, ongeacht 90°/-90°/180°/0° rotatie
+    function fitAllTcgUnits() {
+      const slots = document.querySelectorAll('.player-slot');
+      const cardRatio = 88 / 63; // ~1.3968 (Standaard liggende TCG Base-kaart)
+
+      slots.forEach(slot => {
+        const unit = slot.querySelector('.tcg-unit');
+        if (!unit) return;
+        const rot = parseInt(unit.getAttribute('data-rot') || '0', 10);
+        const isSideways = Math.abs(rot) % 180 === 90;
+
+        const slotW = slot.clientWidth - 8;
+        const slotH = slot.clientHeight - 8;
+        if (slotW <= 0 || slotH <= 0) return;
+
+        // Beschikbare breedte en hoogte in de kijkrichting van de speler zelf
+        const availW = isSideways ? slotH : slotW;
+        const availH = isSideways ? slotW : slotH;
+
+        let targetW, targetH;
+        if (availW / availH > cardRatio) {
+          targetH = availH;
+          targetW = targetH * cardRatio;
+        } else {
+          targetW = availW;
+          targetH = targetW / cardRatio;
+        }
+
+        unit.style.width = `${Math.floor(targetW)}px`;
+        unit.style.height = `${Math.floor(targetH)}px`;
+      });
+    }
+
+    window.addEventListener('resize', () => requestAnimationFrame(fitAllTcgUnits));
+
+    // ============================================================================
+    // 5. SPELDUUR KLOK & MENU FUNCTIES
+    // ============================================================================
+    function formatShortTime(sec) {
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function formatLongTime(sec) {
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function updateHudDisplays() {
+      const hudRound = document.getElementById('hudRound');
+      const hudTimer = document.getElementById('hudTimer');
+      const menuTimer = document.getElementById('menuTimerDisplay');
+      const menuRound = document.getElementById('menuRoundDisplay');
+      const menuAvg = document.getElementById('menuAvgRound');
+      const pauseBtn = document.getElementById('pauseTimerBtn');
+
+      if (hudRound) hudRound.textContent = state.round;
+      if (hudTimer) hudTimer.textContent = formatShortTime(state.elapsedSeconds);
+      if (menuTimer) menuTimer.textContent = formatLongTime(state.elapsedSeconds);
+      if (menuRound) menuRound.textContent = state.round;
+      if (menuAvg) {
+        const avg = Math.round(state.elapsedSeconds / Math.max(1, state.round));
+        menuAvg.textContent = `Gemiddeld per ronde: ${formatShortTime(avg)}`;
+      }
+      if (pauseBtn) {
+        pauseBtn.textContent = state.timerPaused ? 'Hervat Klok' : 'Pauzeer Klok';
+      }
+    }
+
+    setInterval(() => {
+      if (!state.timerPaused) {
+        state.elapsedSeconds += 1;
+        updateHudDisplays();
+        if (state.elapsedSeconds % 10 === 0) saveState();
+      }
+    }, 1000);
+
+    function toggleTimerPause() {
+      state.timerPaused = !state.timerPaused;
+      saveState();
+      updateHudDisplays();
+    }
+
+    function resetTimerOnly() {
+      state.elapsedSeconds = 0;
+      state.timerPaused = false;
+      saveState();
+      updateHudDisplays();
+    }
+
+    function setPlayerCount(count) {
+      state.playerCount = count;
+      const rots = DEFAULT_ROTATIONS[count] || DEFAULT_ROTATIONS[4];
+      for (let i = 0; i < count; i++) {
+        state.players[i].rotation = rots[i];
+      }
+      if (state.previousInitPlayerId >= count) {
+        state.previousInitPlayerId = 0;
+      }
+      saveState();
+      renderPlayers();
+      renderMenuModalContent();
+    }
+
+    function resetFullGame() {
+      state.round = 1;
+      state.elapsedSeconds = 0;
+      state.timerPaused = false;
+      state.previousInitPlayerId = 0;
+      state.players.forEach(p => {
+        p.damage = 0;
+        p.claimedToken = null;
+        p.l1 = false;
+        p.l2 = false;
+        p.epicBase = false;
+      });
+      saveState();
+      renderPlayers();
+      updateHudDisplays();
+      closeMenuModal();
+      showToast('Nieuw spel gestart — Alle Bases op 0 schade');
+    }
+
+    function openMenuModal() {
+      renderMenuModalContent();
+      updateHudDisplays();
+      const modal = document.getElementById('menuModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeMenuModal() {
+      const modal = document.getElementById('menuModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function renderMenuModalContent() {
+      [3, 4, 5].forEach(c => {
+        const btn = document.getElementById(`btnCount${c}`);
+        if (!btn) return;
+        if (state.playerCount === c) {
+          btn.className = 'py-2.5 rounded-lg font-bold text-xs border transition bg-amber-400 text-slate-950 border-amber-300';
+        } else {
+          btn.className = 'py-2.5 rounded-lg font-bold text-xs border transition bg-slate-900 text-slate-300 border-slate-700 hover:bg-slate-800';
+        }
+      });
+
+      const badge = document.getElementById('baseTotalBadge');
+      if (badge) badge.textContent = `${allBases.length} Bases beschikbaar`;
+
+      const listEl = document.getElementById('menuPlayerBaseList');
+      if (!listEl) return;
+
+      const active = state.players.slice(0, state.playerCount);
+      listEl.innerHTML = active.map((p, idx) => {
+        const base = getBaseById(p.baseId);
+        return `
+          <div class="flex items-center justify-between gap-2 bg-slate-900 border border-slate-800 rounded-lg px-3 py-2">
+            <div class="min-w-0">
+              <div class="text-xs font-bold text-white truncate">Speler ${idx + 1}: ${base.name}</div>
+              <div class="text-[11px] text-slate-400">Planeet: ${base.planet} • ${base.hp} HP (${base.set})</div>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button onclick="rotatePlayer(${p.id}); renderMenuModalContent();" class="px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-[11px] font-bold text-slate-200">
+                ${p.rotation}°
+              </button>
+              <button onclick="closeMenuModal(); openBaseModal(${p.id});" class="px-3 py-1.5 rounded bg-amber-400 hover:bg-amber-300 text-slate-950 text-[11px] font-extrabold">
+                Kies Base
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ============================================================================
+    // 6. BASE KIEZER MET PLANEET-ZOEKEN EN LIVE SYNC VAN NIEUWE BASES
+    // ============================================================================
+    let activeBaseModalPlayer = 0;
+    let selectedSetFilter = 'ALL';
+    let selectedAspectFilter = 'ALL';
+
+    function openBaseModal(playerId) {
+      activeBaseModalPlayer = playerId;
+      const modal = document.getElementById('baseModal');
+      const title = document.getElementById('baseModalTitle');
+      const currentInfo = document.getElementById('baseModalCurrentInfo');
+      const currentBase = getBaseById(state.players[playerId]?.baseId);
+      if (title) title.textContent = `Kies Base — Speler ${playerId + 1}`;
+      if (currentInfo && currentBase) {
+        currentInfo.innerHTML = `Geselecteerd: <strong class="text-amber-300">${currentBase.name}</strong> (${currentBase.planet} • ${currentBase.hp} HP)`;
+      }
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      renderFilterBars();
+      renderBaseGallery();
+      setTimeout(() => {
+        const selectedEl = document.getElementById('selectedBaseCardItem');
+        if (selectedEl) {
+          selectedEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+      }, 60);
+    }
+
+    function closeBaseModal() {
+      const modal = document.getElementById('baseModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function renderFilterBars() {
+      const setBar = document.getElementById('setFilterBar');
+      const aspectBar = document.getElementById('aspectFilterBar');
+
+      if (setBar) {
+        setBar.innerHTML = SETS_META.map(s => {
+          const active = selectedSetFilter === s.code;
+          return `<button
+            onclick="selectedSetFilter='${s.code}'; renderFilterBars(); renderBaseGallery();"
+            class="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition ${
+              active
+                ? 'bg-amber-400 text-slate-950 border-amber-300'
+                : 'bg-slate-950 text-slate-300 border-slate-800 hover:bg-slate-800'
+            }"
+          >${s.label}</button>`;
+        }).join('');
+      }
+
+      if (aspectBar) {
+        aspectBar.innerHTML = ASPECT_META.map(a => {
+          const active = selectedAspectFilter === a.code;
+          return `<button
+            onclick="selectedAspectFilter='${a.code}'; renderFilterBars(); renderBaseGallery();"
+            class="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition ${
+              active
+                ? 'bg-sky-400 text-slate-950 border-sky-300'
+                : 'bg-slate-950 text-slate-300 border-slate-800 hover:bg-slate-800'
+            }"
+          >${a.label}</button>`;
+        }).join('');
+      }
+    }
+
+    function renderBaseGallery() {
+      const grid = document.getElementById('baseGalleryGrid');
+      const query = (document.getElementById('baseSearchInput')?.value || '').trim().toLowerCase();
+      if (!grid) return;
+
+      const currentPlayerBaseId = state.players[activeBaseModalPlayer]?.baseId;
+
+      const filtered = allBases.filter(b => {
+        if (selectedSetFilter !== 'ALL' && b.set !== selectedSetFilter) return false;
+        if (selectedAspectFilter !== 'ALL' && b.aspect !== selectedAspectFilter) return false;
+        if (!query) return true;
+        const haystack = `${b.name} ${b.planet || ''} ${b.set} ${b.aspect} ${b.hp}hp`.toLowerCase();
+        return haystack.includes(query);
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-400 text-sm">Geen Base gevonden voor deze zoekopdracht of planeet.</div>`;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(base => {
+        const initialImg = getBestInitialBaseImage(base);
+        const isSelected = base.id === currentPlayerBaseId;
+        const aspectCol = ASPECT_COLORS[base.aspect] || ASPECT_COLORS.Neutral;
+
+        return `
+          <div
+            ${isSelected ? 'id="selectedBaseCardItem"' : ''}
+            onclick="selectBaseForPlayer('${base.id}')"
+            class="group cursor-pointer rounded-xl overflow-hidden bg-slate-950 border-2 transition flex flex-col shrink-0 ${
+              isSelected
+                ? 'border-amber-400 ring-2 ring-amber-400/60 shadow-[0_0_20px_rgba(250,204,21,0.35)]'
+                : 'border-slate-800 hover:border-slate-600'
+            }"
+          >
+            <div class="relative w-full bg-slate-900 overflow-hidden shrink-0" style="aspect-ratio: 88 / 63; min-height: 110px;">
+              <img
+                src="${initialImg.src}"
+                alt="${base.name}"
+                loading="lazy"
+                data-fallback-idx="${initialImg.idx}"
+                onload="handleCardImgLoad(this, '${base.id}')"
+                onerror="handleCardImgError(this, '${base.id}')"
+                class="w-full h-full object-cover group-hover:scale-105 transition duration-200"
+              />
+              ${isSelected ? `
+                <span class="absolute top-1.5 left-1.5 px-2 py-0.5 rounded bg-amber-400 text-slate-950 sw-font text-[9px] font-black uppercase tracking-wider shadow-lg">
+                  ✓ Actief
+                </span>
+              ` : ''}
+              <span class="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded bg-slate-950/90 text-[10px] font-extrabold text-white border border-white/15">
+                ${base.hp} HP
+              </span>
+              <span class="absolute bottom-1.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded bg-slate-950/90 text-[10px] font-bold text-amber-300 border border-amber-400/30 truncate max-w-[90%]">
+                ${base.planet}
+              </span>
+            </div>
+            <div class="p-2.5 flex items-center justify-between gap-1 bg-slate-950">
+              <div class="min-w-0">
+                <div class="text-xs font-bold ${isSelected ? 'text-amber-300' : 'text-white'} truncate">${base.name}</div>
+                <div class="text-[10px] text-slate-400 truncate">${base.set}-${base.num} • ${base.aspect}</div>
+              </div>
+              <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:${aspectCol.hex}"></span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectBaseForPlayer(baseId) {
+      const p = state.players[activeBaseModalPlayer];
+      if (!p) return;
+      p.baseId = baseId;
+      saveState();
+      updatePlayersDOM();
+      closeBaseModal();
+    }
+
+    function applyCustomUrlBase() {
+      const urlInput = document.getElementById('customBaseUrl');
+      const hpInput = document.getElementById('customBaseHp');
+      const url = (urlInput?.value || '').trim();
+      const hp = parseInt(hpInput?.value || '30', 10) || 30;
+      if (!url) return;
+
+      const customId = 'CUSTOM-' + Date.now();
+      allBases.unshift({
+        id: customId,
+        set: 'IBH',
+        num: '999',
+        name: 'Eigen Base',
+        planet: 'Custom Planeet',
+        aspect: 'Neutral',
+        hp: hp,
+        customImg: url
+      });
+      selectBaseForPlayer(customId);
+    }
+
+    function applyCustomFileBase(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const hp = parseInt(document.getElementById('customBaseHp')?.value || '30', 10) || 30;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const customId = 'FILE-' + Date.now();
+        allBases.unshift({
+          id: customId,
+          set: 'IBH',
+          num: '999',
+          name: file.name.replace(/\.[^/.]+$/, ''),
+          planet: 'Eigen Planeet',
+          aspect: 'Neutral',
+          hp: hp,
+          customImg: e.target.result
+        });
+        selectBaseForPlayer(customId);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Live synchronisatie met officiële SWU API's (filtert strikt op type === 'Base')
+    async function syncOfficialBases() {
+      const btn = document.getElementById('liveSyncBtn');
+      if (btn) btn.textContent = '🔄 Bezig met ophalen...';
+
+      try {
+        const endpoints = [
+          'https://api.swu-db.com/cards/search?q=type:base',
+          'https://api.swuapi.com/cards?type=Base&limit=250'
+        ];
+
+        for (const url of endpoints) {
+          try {
+            const res = await fetch(url);
+            if (!res.ok) continue;
+            const data = await res.json();
+            const cards = Array.isArray(data) ? data : (data.data || data.cards || []);
+
+            cards.forEach(c => {
+              const cardType = String(c.type || c.Type || '').toLowerCase();
+              if (cardType && cardType !== 'base') return;
+
+              const setCode = String(c.set || c.Set || 'SOR').toUpperCase();
+              const rawNum = String(c.number || c.Number || c.cardNumber || '019').padStart(3, '0');
+              const id = `${setCode}-${rawNum}`;
+              const name = c.name || c.Name || c.title;
+              if (!name) return;
+
+              const planet =
+                c.subtitle ||
+                c.Subtitle ||
+                (Array.isArray(c.traits) ? c.traits.join(' / ') : '') ||
+                'Onbekende Planeet';
+              const hp = parseInt(c.hp || c.HP || 30, 10) || 30;
+              const imgUrl = c.frontImageUrl || c.FrontArt || c.imageUrl || null;
+              const aspectRaw = Array.isArray(c.aspects) ? c.aspects[0] : (Array.isArray(c.Aspects) ? c.Aspects[0] : 'Neutral');
+              const aspect = ASPECT_COLORS[aspectRaw] ? aspectRaw : 'Neutral';
+
+              const existing = allBases.find(b => b.id === id || b.name.toLowerCase() === name.toLowerCase());
+              if (existing) {
+                if (imgUrl) existing.customImg = imgUrl;
+                if (planet && !existing.planet) existing.planet = planet;
+              } else {
+                allBases.push({
+                  id,
+                  set: setCode,
+                  num: rawNum,
+                  name,
+                  planet,
+                  aspect,
+                  hp,
+                  customImg: imgUrl
+                });
+              }
+            });
+          } catch (innerErr) {}
+        }
+      } catch (err) {}
+
+      if (btn) btn.textContent = '🔄 Zoek live naar nieuwe Bases';
+      renderBaseGallery();
+      renderPlayers();
+    }
+
+    // ============================================================================
+    // 7. SCREEN WAKE LOCK (HOUDT HET SCHERM VAN MOBIELE APPARATEN ALTIJD AAN)
+    // ============================================================================
+    let wakeLockSentinel = null;
+
+    async function requestScreenWakeLock() {
+      const statusEl = document.getElementById('wakeLockStatusText');
+      if ('wakeLock' in navigator) {
+        try {
+          if (wakeLockSentinel !== null && !wakeLockSentinel.released) return;
+          wakeLockSentinel = await navigator.wakeLock.request('screen');
+          if (statusEl) {
+            statusEl.textContent = 'Scherm-sluimerstand: Actief geblokkeerd (Scherm blijft aan)';
+            statusEl.className = 'text-[10px] font-bold text-emerald-400 mt-1';
+          }
+          wakeLockSentinel.addEventListener('release', () => {
+            wakeLockSentinel = null;
+          });
+        } catch (err) {
+          if (statusEl) {
+            statusEl.textContent = 'Scherm blijft aan zodra je het scherm aanraakt';
+            statusEl.className = 'text-[10px] font-bold text-amber-400 mt-1';
+          }
+        }
+      }
+    }
+
+    // Heractiveer Wake Lock automatisch bij terugkeren naar tabblad of bij aanraking
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        requestScreenWakeLock();
+      }
+    });
+    document.addEventListener('pointerdown', () => {
+      if (!wakeLockSentinel || wakeLockSentinel.released) {
+        requestScreenWakeLock();
+      }
+    }, { passive: true });
+
+    // Direct initialiseren bij openen van het bestand
+    window.addEventListener('DOMContentLoaded', () => {
+      renderPlayers();
+      updateHudDisplays();
+      requestScreenWakeLock();
+      syncOfficialBases();
+    });
+    renderPlayers();
+    updateHudDisplays();
+    requestScreenWakeLock();
+  </script>
+</body>
+</html>

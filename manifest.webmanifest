@@ -2,7 +2,7 @@
   "name": "Holotable // Tournament Control",
   "short_name": "Holotable",
   "description": "Offline tournament control and the SWU Arnhem event calendar.",
-  "start_url": "./manager.html",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",

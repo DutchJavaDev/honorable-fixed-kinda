@@ -1,8 +1,9 @@
-const CACHE_NAME = 'holotable-shell-v1';
+const CACHE_NAME = 'holotable-shell-v2';
 const APP_SHELL = [
   './',
   './index.html',
   './manager.html',
+  './life-counter.html',
   './styles.css',
   './app.js',
   './database-ui.js',
@@ -47,7 +48,7 @@ self.addEventListener('fetch', event => {
         caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
       }
       return response;
-    }).catch(() => event.request.mode === 'navigate' ? caches.match('./manager.html') : Response.error())
+    }).catch(() => event.request.mode === 'navigate' ? caches.match('./index.html') : Response.error())
   )
   );
 });
