@@ -5,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Star Wars: Unlimited — Twin Suns Tracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/geometries/RoundedBoxGeometry.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=3" />
@@ -45,14 +43,13 @@
     body.topbar-hidden #holotableTopbar {
       display: none !important;
     }
-    /* Verberg de navigatiebalk automatisch bij het kantelen op mobiele/tablet schermen */
     @media (orientation: landscape) and (max-height: 600px) {
       body:not(.force-show-topbar) #holotableTopbar {
         display: none !important;
       }
     }
 
-    /* Spelersgrids voor 3, 4 en 5 spelers (vult exact de ruimte onder de topbar) */
+    /* Spelersgrids voor 3, 4 en 5 spelers */
     #playersGrid {
       flex: 1 1 auto;
       min-height: 0;
@@ -108,6 +105,19 @@
       align-items: center;
       justify-content: center;
       box-shadow: inset 0 0 0 1.5px rgba(255,255,255,0.14), 0 8px 24px rgba(0,0,0,0.75);
+      transition: opacity 0.35s ease, filter 0.35s ease, box-shadow 0.35s ease;
+    }
+
+    /* Random Speler Selectie: 50% dimmen van niet-gekozen bases & heldere highlight op gekozen base */
+    .player-slot.dimmed-slot {
+      opacity: 0.5 !important;
+      filter: brightness(0.48) saturate(0.75);
+    }
+    .player-slot.selected-random-slot {
+      opacity: 1 !important;
+      filter: brightness(1.06);
+      box-shadow: 0 0 0 3px #f0b35a, 0 0 32px rgba(240, 179, 90, 0.75), inset 0 0 22px rgba(240, 179, 90, 0.35) !important;
+      z-index: 25;
     }
 
     /* De geroteerde speler-unit die altijd meedraait en als een liggende TCG-kaart (88:63) schaalt */
@@ -146,13 +156,22 @@
       pointer-events: none;
     }
 
-    /* Centrale Command Bar (strakke SWU HUD-pil, gecentreerd op het spelersgrid) */
-    .center-command-bar {
+    /* Centrale Command Cluster (Status/Menu pil + Dice & Coin Flip knoppen eronder) */
+    .center-hud-cluster {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
       z-index: 45;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      pointer-events: none;
+    }
+
+    .center-command-bar {
+      pointer-events: auto;
       background: rgba(9, 13, 24, 0.95);
       border: 1.5px solid rgba(250, 204, 21, 0.55);
       border-radius: 9999px;
@@ -166,7 +185,204 @@
       transition: transform 0.15s ease, border-color 0.2s ease;
     }
     .center-command-bar:active {
-      transform: translate(-50%, -50%) scale(0.95);
+      transform: scale(0.95);
+    }
+
+    .hud-sub-bar {
+      pointer-events: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .hud-action-btn {
+      position: relative;
+      background: rgba(12, 16, 23, 0.95);
+      border: 1.5px solid rgba(240, 179, 90, 0.55);
+      border-radius: 4px;
+      padding: 4px 10px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      color: #f0b35a;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.85), inset 0 0 8px rgba(240, 179, 90, 0.12);
+      backdrop-filter: blur(8px);
+      cursor: pointer;
+      transition: transform 0.12s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+    .hud-action-btn:hover {
+      background: rgba(28, 35, 48, 0.98);
+      border-color: #f0b35a;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.9), 0 0 12px rgba(240, 179, 90, 0.35);
+    }
+    .hud-action-btn:active {
+      transform: scale(0.92);
+    }
+
+    /* SWU Dobbelstenen & Coin Flip Overlay over het speelveld */
+    #swuFxOverlay {
+      position: absolute;
+      inset: 0;
+      z-index: 48;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .swu-die-wrapper {
+      position: absolute;
+      width: 68px;
+      height: 68px;
+      margin-left: -34px;
+      margin-top: -34px;
+      pointer-events: auto;
+      cursor: pointer;
+      z-index: 48;
+      transition: left 0.68s cubic-bezier(0.18, 0.89, 0.32, 1.18), top 0.68s cubic-bezier(0.18, 0.89, 0.32, 1.18);
+    }
+
+    .swu-die-body {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(145deg, #17202a 0%, #090d13 100%);
+      border: 2px solid #f0b35a;
+      border-radius: 12px;
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.92), 0 0 18px rgba(240, 179, 90, 0.38), inset 0 0 12px rgba(240, 179, 90, 0.18);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      padding: 9px;
+      gap: 4px;
+      position: relative;
+      transition: transform 0.68s cubic-bezier(0.18, 0.89, 0.32, 1.24);
+    }
+    .swu-die-body::after {
+      content: '';
+      position: absolute;
+      inset: 3px;
+      border: 1px solid rgba(240, 179, 90, 0.22);
+      border-radius: 8px;
+      pointer-events: none;
+    }
+
+    .swu-die-pip {
+      width: 10px;
+      height: 10px;
+      border-radius: 9999px;
+      background: #f0b35a;
+      box-shadow: 0 0 8px #f0b35a, 0 0 3px #ffffff;
+      place-self: center;
+      opacity: 0;
+      transform: scale(0.3);
+      transition: opacity 0.15s ease, transform 0.2s ease;
+    }
+    .swu-die-pip.active {
+      opacity: 1;
+      transform: scale(1);
+    }
+    .swu-die-pip.crit-pip {
+      background: #fef08a;
+      box-shadow: 0 0 10px #facc15, 0 0 4px #ffffff;
+    }
+
+    .swu-dice-summary {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(10, 14, 20, 0.94);
+      border: 1.5px solid #f0b35a;
+      border-radius: 6px;
+      padding: 5px 14px;
+      box-shadow: 0 10px 26px rgba(0,0,0,0.9), 0 0 16px rgba(240, 179, 90, 0.3);
+      pointer-events: auto;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* 3D Gouden Munt BOVEN het centrale menu opgegooid */
+    .swu-coin-stage {
+      position: absolute;
+      top: calc(50% - 135px);
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      perspective: 1100px;
+      pointer-events: auto;
+      cursor: pointer;
+      z-index: 49;
+    }
+
+    @media (max-height: 540px) {
+      .swu-coin-stage {
+        top: calc(50% - 105px);
+      }
+    }
+
+    .swu-coin-3d {
+      width: 112px;
+      height: 112px;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 1.15s cubic-bezier(0.15, 0.85, 0.25, 1);
+    }
+
+    .swu-coin-face {
+      position: absolute;
+      inset: 0;
+      border-radius: 9999px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 16px 36px rgba(0,0,0,0.95), 0 0 24px rgba(250, 204, 21, 0.45), inset 0 0 18px rgba(255, 251, 235, 0.45);
+    }
+
+    .swu-coin-face::after {
+      content: '';
+      position: absolute;
+      inset: 6px;
+      border-radius: 9999px;
+      border: 1.5px dashed rgba(120, 53, 15, 0.55);
+      pointer-events: none;
+    }
+
+    /* Zowel Heads als Tails zijn een gouden Star Wars munt */
+    .swu-coin-heads {
+      background: radial-gradient(circle at 30% 25%, #fef9c3 0%, #facc15 35%, #d97706 72%, #78350f 100%);
+      border: 3.5px solid #fef08a;
+      color: #451a03;
+    }
+
+    .swu-coin-tails {
+      background: radial-gradient(circle at 30% 25%, #fef08a 0%, #f59e0b 38%, #b45309 75%, #451a03 100%);
+      border: 3.5px solid #fde047;
+      color: #fef9c3;
+      transform: rotateY(180deg);
+    }
+    .swu-coin-tails::after {
+      border-color: rgba(254, 240, 138, 0.45);
+    }
+
+    .swu-coin-banner {
+      background: rgba(10, 14, 20, 0.96);
+      border: 1.5px solid #facc15;
+      border-radius: 6px;
+      padding: 5px 14px;
+      box-shadow: 0 10px 28px rgba(0,0,0,0.95), 0 0 18px rgba(250, 204, 21, 0.35);
+      text-align: center;
+      white-space: nowrap;
     }
 
     /* Gouden rand voor de speler die de vorige ronde Initiative had geclaimd */
@@ -236,7 +452,7 @@
     }
   </style>
   <style>
-    /* Shared Holotable visual language: amber instrumentation, angular panels, and the deck-black surface. */
+    /* Shared Holotable visual language */
     .life-counter-page {
       background: var(--deck-black, #0a0c0f);
       background-image: radial-gradient(ellipse at 78% 4%, #7d3d252b 0, transparent 23%), linear-gradient(130deg, #080a0d 0%, #12161a 50%, #090b0e 100%);
@@ -260,165 +476,6 @@
     .life-counter-page .text-amber-400,
     .life-counter-page .text-amber-300 { color: var(--imperial-amber, #f0b35a) !important; }
     .life-counter-page .bg-amber-400 { background-color: var(--imperial-amber, #f0b35a) !important; }
-
-    /* Life counter menu: command-deck treatment instead of the default blue modal. */
-    .life-counter-page #menuModal,
-    .life-counter-page #baseModal { background: rgba(3, 5, 6, .88) !important; }
-    .life-counter-page #menuModal > div,
-    .life-counter-page #baseModal > div {
-      background: linear-gradient(145deg, #191b1b 0%, #0b0f10 100%) !important;
-      border: 1px solid #715536 !important;
-      border-radius: 2px !important;
-      box-shadow: 0 24px 70px #000d, 0 0 0 1px #f0b35a12 !important;
-    }
-    .life-counter-page #menuModal > div > div:first-child,
-    .life-counter-page #baseModal > div > div:first-child { background: #0b0f10 !important; border-color: #3d3327 !important; }
-    .life-counter-page #menuModal h2,
-    .life-counter-page #baseModal h3 { color: #f0b35a !important; font-family: 'Barlow Condensed', sans-serif; letter-spacing: 1.8px; }
-    .life-counter-page #menuModal p,
-    .life-counter-page #baseModal p { color: #918b7d !important; }
-    .life-counter-page #menuModal [class*="bg-slate-950"],
-    .life-counter-page #menuModal [class*="bg-slate-900"] { background: #0d1213d9 !important; border-color: #3b3932 !important; border-radius: 2px !important; }
-    .life-counter-page #menuModal [class*="border-slate-800"],
-    .life-counter-page #menuModal [class*="border-slate-700"] { border-color: #3b3932 !important; }
-    .life-counter-page #menuModal [class*="text-slate-400"],
-    .life-counter-page #menuModal [class*="text-slate-300"] { color: #918b7d !important; }
-    .life-counter-page #menuModal [class*="text-slate-200"],
-    .life-counter-page #menuModal [class*="text-white"] { color: #e7dfcf !important; }
-    .life-counter-page #menuModal button,
-    .life-counter-page #baseModal button { border-radius: 2px !important; box-shadow: none !important; }
-    .life-counter-page #menuModal .bg-amber-500\/20 { background: #3a2817 !important; border-color: #9b7042 !important; color: #f0b35a !important; }
-    .life-counter-page #menuModal .bg-rose-500\/20 { background: #351b19 !important; border-color: #8d453b !important; color: #e88972 !important; }
-    .life-counter-page #menuModal .bg-slate-800 { background: #172022 !important; border-color: #4f7778 !important; }
-    .life-counter-page #menuModal .bg-slate-800:hover { background: #203033 !important; border-color: #78c8cf !important; }
-    .life-counter-page #menuModal .text-emerald-400 { color: #83c9a2 !important; }
-
-    /* Randomizer command console */
-    .randomizer-console {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      z-index: 46;
-      width: min(430px, calc(100vw - 34px));
-      transform: translate(-50%, 42px);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      pointer-events: none;
-    }
-    .randomizer-stage {
-      position: relative;
-      display: none;
-      width: 100vw;
-      height: 100vh;
-      overflow: hidden;
-      position: fixed;
-      inset: 0;
-      border: 0;
-      background: radial-gradient(circle at 50% 44%, #39352b 0, #121719 48%, #050708 100%);
-      box-shadow: inset 0 0 120px #000;
-      clip-path: none;
-      pointer-events: auto;
-    }
-    .randomizer-console.randomizer-active {
-      position: fixed;
-      inset: 0;
-      width: 100vw;
-      height: 100vh;
-      transform: none;
-      z-index: 200;
-      background: #050708f5;
-    }
-    .randomizer-console.randomizer-active .randomizer-stage { display: block; }
-    .randomizer-console.randomizer-active .randomizer-controls,
-    .randomizer-console.randomizer-active .randomizer-hint { display: none; }
-    .randomizer-console.randomizer-active .randomizer-result strong { font-size: clamp(38px, 9vw, 76px); }
-    .randomizer-console.randomizer-active .randomizer-result small { font-size: 12px; }
-    .randomizer-console.randomizer-active .randomizer-stage:before {
-      content: "LIVE TRAJECTORY // TABLE SURFACE LOCKED";
-      position: absolute;
-      top: 28px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 2;
-      color: #d39b55;
-      font: 600 10px 'Barlow Condensed';
-      letter-spacing: 2.2px;
-      white-space: nowrap;
-    }
-    .randomizer-stage:after {
-      content: "HOLO PROJECTION // LIVE RANDOMIZER";
-      position: absolute;
-      left: 12px;
-      bottom: 8px;
-      color: #d39b55;
-      font: 600 7px 'Barlow Condensed';
-      letter-spacing: 1.7px;
-      pointer-events: none;
-    }
-    .randomizer-console.randomizer-active .randomizer-stage:after { bottom: 26px; left: 26px; }
-    #randomizerCanvas { display: none; }
-    #meshRandomizerCanvas { display: none; }
-    .css-dice-stage { position: absolute; inset: 0; display: grid; place-items: center; perspective: 1100px; background: radial-gradient(ellipse at 50% 65%, #44332255 0, transparent 36%); }
-    .css-dice-shadow { position: absolute; width: 230px; height: 74px; border-radius: 50%; background: #0009; filter: blur(18px); transform: translateY(210px); }
-    .css-die-wrap { position: relative; width: 166px; height: 166px; transform-style: preserve-3d; }
-    .css-die { position: absolute; inset: 0; transform-style: preserve-3d; }
-    .css-die-face { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3,1fr); grid-template-rows: repeat(3,1fr); gap: 9px; padding: 22px; border-radius: 23px; border: 2px solid #f0c786; background: linear-gradient(145deg,#e4a85f,#9b5428 72%,#6e301e); box-shadow: inset 7px 8px 14px #ffe0a855, inset -10px -12px 18px #43170d88, 0 12px 22px #0008; backface-visibility: hidden; }
-    .css-die-face.front { transform: translateZ(83px); }
-    .css-die-face.back { transform: rotateY(180deg) translateZ(83px); }
-    .css-die-face.right { transform: rotateY(90deg) translateZ(83px); }
-    .css-die-face.left { transform: rotateY(-90deg) translateZ(83px); }
-    .css-die-face.top { transform: rotateX(90deg) translateZ(83px); }
-    .css-die-face.bottom { transform: rotateX(-90deg) translateZ(83px); }
-    .css-pip { width: 100%; height: 100%; border-radius: 50%; align-self: center; justify-self: center; background: radial-gradient(circle at 35% 28%,#6e2c1d 0 12%,#1d0d0a 55%,#050303 100%); box-shadow: inset 2px 3px 3px #000, 0 1px 1px #ffd28a55; opacity: 0; transform: scale(.72); }
-    .css-die-face .css-pip:nth-child(1),.css-die-face .css-pip:nth-child(2),.css-die-face .css-pip:nth-child(3),.css-die-face .css-pip:nth-child(4),.css-die-face .css-pip:nth-child(5),.css-die-face .css-pip:nth-child(6),.css-die-face .css-pip:nth-child(7),.css-die-face .css-pip:nth-child(8),.css-die-face .css-pip:nth-child(9) { opacity: 0; }
-    .css-die-face[data-value="1"] .css-pip:nth-child(5),.css-die-face[data-value="2"] .css-pip:nth-child(1),.css-die-face[data-value="2"] .css-pip:nth-child(9),.css-die-face[data-value="3"] .css-pip:nth-child(1),.css-die-face[data-value="3"] .css-pip:nth-child(5),.css-die-face[data-value="3"] .css-pip:nth-child(9),.css-die-face[data-value="4"] .css-pip:nth-child(1),.css-die-face[data-value="4"] .css-pip:nth-child(3),.css-die-face[data-value="4"] .css-pip:nth-child(7),.css-die-face[data-value="4"] .css-pip:nth-child(9),.css-die-face[data-value="5"] .css-pip:nth-child(1),.css-die-face[data-value="5"] .css-pip:nth-child(3),.css-die-face[data-value="5"] .css-pip:nth-child(5),.css-die-face[data-value="5"] .css-pip:nth-child(7),.css-die-face[data-value="5"] .css-pip:nth-child(9),.css-die-face[data-value="6"] .css-pip:nth-child(1),.css-die-face[data-value="6"] .css-pip:nth-child(3),.css-die-face[data-value="6"] .css-pip:nth-child(4),.css-die-face[data-value="6"] .css-pip:nth-child(6),.css-die-face[data-value="6"] .css-pip:nth-child(7),.css-die-face[data-value="6"] .css-pip:nth-child(9) { opacity: 1; }
-    .css-coin { position: relative; width: 142px; height: 142px; border-radius: 50%; transform-style: preserve-3d; display: none; background: radial-gradient(circle at 32% 26%,#ffd58b,#b46d2d 58%,#542316); border: 7px solid #d49a50; box-shadow: inset 0 0 0 2px #5c2918, inset 10px 12px 16px #ffe4a055, 0 16px 28px #0009; }
-    .css-coin:before { content: ""; position: absolute; inset: -7px; border-radius: 50%; background: repeating-linear-gradient(0deg,#6d351c 0 2px,#c48239 2px 4px); border: 2px solid #e0a256; transform: translateZ(-11px); box-shadow: 0 9px 0 #3a180f; }
-    .css-coin-face { position: absolute; inset: 12px; display: grid; place-items: center; border: 2px solid #35180f; border-radius: 50%; color: #35180f; font: 800 13px 'Barlow Condensed'; letter-spacing: 2px; backface-visibility: hidden; transform: translateZ(11px); }
-    .css-coin-face.back { transform: rotateY(180deg) translateZ(11px); }
-    .css-die-face[data-value="1"] .css-pip:nth-child(5),.css-die-face[data-value="2"] .css-pip:nth-child(1),.css-die-face[data-value="2"] .css-pip:nth-child(9),.css-die-face[data-value="3"] .css-pip:nth-child(1),.css-die-face[data-value="3"] .css-pip:nth-child(5),.css-die-face[data-value="3"] .css-pip:nth-child(9),.css-die-face[data-value="4"] .css-pip:nth-child(1),.css-die-face[data-value="4"] .css-pip:nth-child(3),.css-die-face[data-value="4"] .css-pip:nth-child(7),.css-die-face[data-value="4"] .css-pip:nth-child(9),.css-die-face[data-value="5"] .css-pip:nth-child(1),.css-die-face[data-value="5"] .css-pip:nth-child(3),.css-die-face[data-value="5"] .css-pip:nth-child(5),.css-die-face[data-value="5"] .css-pip:nth-child(7),.css-die-face[data-value="5"] .css-pip:nth-child(9),.css-die-face[data-value="6"] .css-pip:nth-child(1),.css-die-face[data-value="6"] .css-pip:nth-child(3),.css-die-face[data-value="6"] .css-pip:nth-child(4),.css-die-face[data-value="6"] .css-pip:nth-child(6),.css-die-face[data-value="6"] .css-pip:nth-child(7),.css-die-face[data-value="6"] .css-pip:nth-child(9) { opacity: 1; }
-    @media(max-width:560px){.css-die-wrap{width:132px;height:132px}.css-die-face{padding:17px;gap:7px;border-radius:19px}.css-die-face.front{transform:translateZ(66px)}.css-die-face.back{transform:rotateY(180deg) translateZ(66px)}.css-die-face.right{transform:rotateY(90deg) translateZ(66px)}.css-die-face.left{transform:rotateY(-90deg) translateZ(66px)}.css-die-face.top{transform:rotateX(90deg) translateZ(66px)}.css-die-face.bottom{transform:rotateX(-90deg) translateZ(66px)}}
-    .randomizer-result {
-      position: absolute;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      color: #fff2ca;
-      text-align: center;
-      pointer-events: none;
-      text-shadow: 0 2px 14px #000, 0 0 18px #f0b35a88;
-    }
-    .randomizer-result strong { display: block; font: 800 clamp(27px, 6vw, 42px)/1 'Orbitron'; letter-spacing: 2px; }
-    .randomizer-result small { display: block; margin-top: 7px; color: #f0b35a; font: 700 9px 'Barlow Condensed'; letter-spacing: 2px; }
-    .randomizer-controls { display: flex; flex-direction: column; gap: 8px; pointer-events: auto; }
-    .randomizer-btn {
-      min-width: 143px;
-      min-height: 42px;
-      padding: 9px 14px;
-      border: 1px solid #8e693e;
-      border-radius: 2px;
-      background: #111719eF;
-      color: #e7dcc5;
-      cursor: pointer;
-      font: 700 11px 'Barlow Condensed';
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      transition: .18s ease;
-      box-shadow: 0 5px 18px #0008;
-    }
-    .randomizer-btn:hover { border-color: #f0b35a; color: #fff2ca; background: #29231a; transform: translateY(-1px); }
-    .randomizer-btn:active { transform: translateY(1px); }
-    .randomizer-btn:disabled { cursor: wait; opacity: .58; }
-    .randomizer-btn .cmd-icon { color: #f0b35a; font-size: 16px; vertical-align: -2px; margin-right: 6px; }
-    .randomizer-hint { color: #918b7d; font: 600 8px 'Barlow Condensed'; letter-spacing: 1.7px; text-transform: uppercase; }
-    .coin-insignia { display: inline-block; width: 17px; height: 17px; margin-right: 5px; vertical-align: -4px; color: currentColor; }
-    @media (max-width: 560px) {
-      .randomizer-console { gap: 7px; }
-      .randomizer-btn { min-width: 132px; padding-inline: 9px; }
-      .randomizer-hint { display: none; }
-    }
   </style>
 </head>
 <body class="life-counter-page">
@@ -440,41 +497,53 @@
     </div>
   </header>
 
-  <!-- SPEELVELD WRAPPER (Zorgt dat HUD pil altijd exact in het midden van het spelersgrid staat) -->
-  <div class="relative flex-1 min-h-0 w-full flex flex-col">
+  <!-- SPEELVELD WRAPPER -->
+  <div id="playfieldWrapper" class="relative flex-1 min-h-0 w-full flex flex-col">
     <!-- SPELERS GRID -->
     <main id="playersGrid" class="grid-4p"></main>
 
-    <!-- CENTRALE HUD PIL -->
-    <button id="centerHudBtn" onclick="openMenuModal()" class="center-command-bar" title="Open Menu">
-      <div class="flex items-center gap-2">
-        <span class="sw-font text-[11px] font-extrabold tracking-widest text-amber-400">R<span id="hudRound">1</span></span>
-        <span class="w-1 h-1 rounded-full bg-slate-600"></span>
-        <span id="hudTimer" class="sw-font text-[11px] font-bold tracking-wider text-slate-200">00:00</span>
-      </div>
-      <div class="w-[1px] h-3.5 bg-slate-700"></div>
-      <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Menu</span>
-    </button>
+    <!-- OVERLAY VOOR ROLLENDE DOBBELSTENEN & GOUDEN COIN FLIP BOVEN HET MENU -->
+    <div id="swuFxOverlay"></div>
 
-    <!-- CENTRALE DOBBELSTEEN & MUNT COMMAND CONSOLE -->
-    <section class="randomizer-console" aria-label="Randomizer">
-      <div class="randomizer-stage">
-        <canvas id="randomizerCanvas" aria-hidden="true"></canvas>
-        <div id="randomizerResult" class="randomizer-result" aria-live="polite">
-          <div><strong id="randomizerValue">READY</strong><small id="randomizerLabel">SELECT A COMMAND</small></div>
+    <!-- CENTRALE HUD CLUSTER (Status/Menu + Dice & Coin Flip eronder) -->
+    <div class="center-hud-cluster">
+      <button id="centerHudBtn" onclick="openMenuModal()" class="center-command-bar" title="Open Menu">
+        <div class="flex items-center gap-2">
+          <span class="sw-font text-[11px] font-extrabold tracking-widest text-amber-400">R<span id="hudRound">1</span></span>
+          <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+          <span id="hudTimer" class="sw-font text-[11px] font-bold tracking-wider text-slate-200">00:00</span>
         </div>
-      </div>
-      <div class="randomizer-controls">
-        <button id="rollDiceBtn" class="randomizer-btn" type="button"><span class="cmd-icon">◆</span>Roll dice</button>
-        <button id="flipCoinBtn" class="randomizer-btn" type="button">
-          <svg class="coin-insignia" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M12 2.7 20.4 7v10L12 21.3 3.6 17V7L12 2.7Z"/><path fill="currentColor" d="M12 5.4 6.8 8v8l5.2 2.6 5.2-2.6V8L12 5.4Zm0 2.4 2.7 1.4-2.7 1.4-2.7-1.4L12 7.8Z"/></svg>Flip coin
+        <div class="w-[1px] h-3.5 bg-slate-700"></div>
+        <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Menu</span>
+      </button>
+
+      <!-- DICE & COIN FLIP KNOPPEN ONDER HET STATUS MENU -->
+      <div class="hud-sub-bar">
+        <button id="hudDiceBtn" onclick="triggerSwuDiceRoll(event)" class="hud-action-btn" title="Rol Dobbelsteen (Tik X keer voor X dobbelstenen)">
+          <svg class="w-3.5 h-3.5 text-amber-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <rect x="3" y="3" width="18" height="18" rx="3"></rect>
+            <circle cx="8.5" cy="8.5" r="1.4" fill="currentColor"></circle>
+            <circle cx="15.5" cy="8.5" r="1.4" fill="currentColor"></circle>
+            <circle cx="12" cy="12" r="1.4" fill="currentColor"></circle>
+            <circle cx="8.5" cy="15.5" r="1.4" fill="currentColor"></circle>
+            <circle cx="15.5" cy="15.5" r="1.4" fill="currentColor"></circle>
+          </svg>
+          <span>Dice</span>
+          <span id="diceCountBadge" class="hidden px-1.5 py-0.2 rounded bg-amber-400 text-slate-950 text-[9px] font-black leading-tight">1</span>
+        </button>
+
+        <button id="hudCoinBtn" onclick="triggerSwuCoinFlip(event)" class="hud-action-btn" title="Gooi een gouden Star Wars: Unlimited munt op">
+          <svg class="w-3.5 h-3.5 text-amber-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 7v10M9 9.5c0-1.2 1.3-2 3-2s3 .8 3 2-1.3 1.8-3 2.2-3 1-3 2.3 1.3 2 3 2 3-.8 3-2"></path>
+          </svg>
+          <span>Coin</span>
         </button>
       </div>
-      <div class="randomizer-hint">Random outcome // Imperial / Rebel sides encoded</div>
-    </section>
+    </div>
   </div>
 
-  <!-- TOAST MELDING VOOR REGROUP / BLAST -->
+  <!-- TOAST MELDING VOOR REGROUP / BLAST / RANDOM SPELER -->
   <div id="toastBanner" class="fixed top-4 left-1/2 -translate-x-1/2 z-[80] hidden pointer-events-none">
     <div class="bg-slate-950/95 border border-amber-400/70 text-amber-300 px-5 py-2.5 rounded-full shadow-2xl sw-font text-xs font-bold tracking-wider uppercase">
       <span id="toastText"></span>
@@ -487,7 +556,7 @@
       <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
         <div>
           <h2 class="sw-font text-base font-extrabold tracking-wider text-amber-400 uppercase">Star Wars: Unlimited — Twin Suns</h2>
-          <p class="text-xs text-slate-400 mt-0.5">Spelinstellingen, Spelduur &amp; Bases</p>
+          <p class="text-xs text-slate-400 mt-0.5">Spelinstellingen, Spelduur &amp; Live API Bases</p>
         </div>
         <div class="flex items-center gap-2">
           <button id="toggleTopbarBtn" onclick="toggleTopbarVisibility()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-amber-300 border border-slate-700">
@@ -500,6 +569,25 @@
       </div>
 
       <div class="p-5 overflow-y-auto custom-scroll space-y-5">
+        <!-- RANDOM SPELER & TAFEL TOOLS -->
+        <div class="bg-slate-950/80 border border-amber-400/40 rounded-xl p-4">
+          <div class="text-[11px] font-bold uppercase tracking-wider text-amber-300 mb-2.5">Tafel Tools &amp; Startspeler</div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <button onclick="selectRandomPlayerFromMenu(event)" class="py-2.5 px-3 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs uppercase tracking-wider shadow-lg transition flex items-center justify-center gap-1.5">
+              <span>Random Speler</span>
+            </button>
+            <button onclick="closeMenuModal(); triggerSwuDiceRoll(event);" class="py-2.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-400/40 font-bold text-xs uppercase tracking-wider transition">
+              Dobbelsteen
+            </button>
+            <button onclick="closeMenuModal(); triggerSwuCoinFlip(event);" class="py-2.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-400/40 font-bold text-xs uppercase tracking-wider transition">
+              Coin Flip
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-2">
+            Bij <strong class="text-slate-200">Random Speler</strong> blijft de gekozen Base helder verlicht en dimmen alle andere Bases met 50% tot je op het scherm tikt.
+          </p>
+        </div>
+
         <!-- SPELDUUR & RONDE KLOK -->
         <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4">
           <div class="flex flex-wrap items-center justify-between gap-3">
@@ -537,7 +625,7 @@
         <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4">
           <div class="flex items-center justify-between mb-2.5">
             <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Bases &amp; Rotatie per Speler</span>
-            <span id="baseTotalBadge" class="text-[11px] font-semibold text-amber-400">Bases beschikbaar</span>
+            <span id="baseTotalBadge" class="text-[11px] font-semibold text-amber-400">Live via SWUAPI</span>
           </div>
           <div id="menuPlayerBaseList" class="space-y-2"></div>
         </div>
@@ -565,8 +653,8 @@
           <p id="baseModalCurrentInfo" class="text-[11px] text-slate-300 mt-0.5">Huidige Base: —</p>
         </div>
         <div class="flex items-center gap-2">
-          <button id="liveSyncBtn" onclick="syncOfficialBases()" class="px-3 py-1.5 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-400/50 text-indigo-200 text-xs font-bold transition">
-            🔄 Zoek live naar nieuwe Bases
+          <button id="liveSyncBtn" onclick="syncOfficialBases(true)" class="px-3 py-1.5 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-400/50 text-indigo-200 text-xs font-bold transition">
+            🔄 Ververs SWUAPI Bases
           </button>
           <button onclick="closeBaseModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200">
             Sluiten
@@ -574,7 +662,7 @@
         </div>
       </div>
 
-      <!-- Zoekbalk & Filters -->
+      <!-- Zoekbalk & Dynamische Filters -->
       <div class="p-3.5 border-b border-slate-800 bg-slate-900/90 space-y-2.5">
         <div class="relative">
           <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm pointer-events-none">🔍</span>
@@ -582,7 +670,7 @@
             id="baseSearchInput"
             type="text"
             oninput="renderBaseGallery()"
-            placeholder="Zoek op Base of Planeet (bijv. Coruscant, Tatooine, Endor, Mandalore, Naboo, Jedha)..."
+            placeholder="Zoek op Base, Planeet, Set of HP (bijv. Coruscant, Tatooine, Endor, Mandalore, Naboo, Jedha)..."
             class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-amber-400"
           />
         </div>
@@ -598,7 +686,7 @@
       <div class="px-4 py-2.5 border-t border-slate-800 bg-slate-950 flex flex-wrap items-center justify-between gap-2 text-xs">
         <div class="flex items-center gap-2 flex-1 min-w-[220px]">
           <input id="customBaseUrl" type="text" placeholder="Plak eigen kaart-afbeelding URL..." class="flex-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs" />
-          <input id="customBaseHp" type="number" value="30" min="15" max="40" class="w-16 px-2 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs text-center" title="Max HP" />
+          <input id="customBaseHp" type="number" value="30" min="15" max="45" class="w-16 px-2 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs text-center" title="Max HP" />
           <button onclick="applyCustomUrlBase()" class="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold">Stel in</button>
         </div>
         <label class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold cursor-pointer">
@@ -610,163 +698,10 @@
   </div>
 
   <script>
-    // Ray-marched tabletop randomizer. The result is chosen before the animation
-    // starts, while the shader provides the physical roll/flip presentation.
-    (() => {
-      const canvas = document.getElementById('randomizerCanvas');
-      const stage = canvas && canvas.parentElement;
-      if (!canvas || !stage) return;
-      const gl = canvas.getContext('webgl', { alpha: false, antialias: true });
-      if (!gl) return;
-      const vertexSource = 'attribute vec2 p; void main(){gl_Position=vec4(p,0.0,1.0);}';
-      const fragmentSource = `
-        precision highp float;
-        uniform vec2 u_resolution; uniform float u_time; uniform float u_mode; uniform float u_running; uniform float u_result;
-        #define FAR 30.0
-        mat2 rot(float a){float c=cos(a),s=sin(a);return mat2(c,-s,s,c);}
-        float box(vec3 p, vec3 b, float r){vec3 q=abs(p)-b;return length(max(q,0.0))+min(max(q.x,max(q.y,q.z)),0.0)-r;}
-        float cyl(vec3 p, float r, float h){vec2 d=abs(vec2(length(p.xz),p.y))-vec2(r,h);return min(max(d.x,d.y),0.0)+length(max(d,0.0));}
-        float torusY(vec3 p, float r, float tube){return length(vec2(length(p.xz)-r,p.y))-tube;}
-        float diePips(vec3 q){
-          float h=10.;
-          h=min(h,length(q-vec3(-.17,.17,.40))-.095);h=min(h,length(q-vec3(.17,.17,.40))-.095);h=min(h,length(q-vec3(0.,0.,.40))-.095);h=min(h,length(q-vec3(-.17,-.17,.40))-.095);h=min(h,length(q-vec3(.17,-.17,.40))-.095);
-          h=min(h,length(q-vec3(-.17,.17,-.40))-.095);h=min(h,length(q-vec3(.17,.17,-.40))-.095);h=min(h,length(q-vec3(-.17,-.17,-.40))-.095);h=min(h,length(q-vec3(.17,-.17,-.40))-.095);
-          h=min(h,length(q-vec3(.40,-.17,.17))-.095);h=min(h,length(q-vec3(.40,0.,0.))-.095);h=min(h,length(q-vec3(.40,.17,-.17))-.095);
-          h=min(h,length(q-vec3(-.40,-.25,.25))-.095);h=min(h,length(q-vec3(-.40,.25,.25))-.095);h=min(h,length(q-vec3(-.40,-.25,-.25))-.095);h=min(h,length(q-vec3(-.40,.25,-.25))-.095);
-          h=min(h,length(q-vec3(-.22,.40,.22))-.095);h=min(h,length(q-vec3(.22,.40,-.22))-.095);
-          h=min(h,length(q-vec3(0.,-.40,0.))-.095);
-          return h;
-        }
-        float coinMark(vec3 q){
-          float face=sign(q.y); vec3 f=q; f.y-=face*.075;
-          if(face>0.){
-            float ring=torusY(f,.255,.018); float inner=torusY(f,.11,.014); float spoke=box(f,vec3(.19,.025,.014),.006);
-            spoke=min(spoke,box(f.xzy,vec3(.19,.025,.014),.006));
-            return min(min(ring,inner),spoke);
-          }
-          float wing=box(f,vec3(.22,.025,.018),.006); wing=min(wing,box(f.xzy,vec3(.22,.025,.018),.006));
-          float cut=box(f-vec3(0.,0.,-.13),vec3(.06,.025,.12),.006);
-          return min(wing,cut);
-        }
-        float map(vec3 p);
-        vec3 normal(vec3 p){float e=.001;return normalize(vec3(map(p+vec3(e,0,0))-map(p-vec3(e,0,0)),map(p+vec3(0,e,0))-map(p-vec3(0,e,0)),map(p+vec3(0,0,e))-map(p-vec3(0,0,e))));}
-        float map(vec3 p){
-          float t=u_time; float fade=max(0.,1.-t/1.45); p.y+=.1;
-          if(u_mode<.5){p.x-=sin(t*3.3)*1.55*fade; p.y-=abs(sin(t*5.8))*1.05*fade; p.xz*=rot(t*6.2);p.xy*=rot(t*4.8);float body=box(p,vec3(.43),.075);return max(body,-diePips(p));}
-          p.x-=sin(t*2.8)*1.55*fade; p.y-=abs(sin(t*4.4))*1.15*fade; p.xy*=rot(t*1.1); p.yz*=rot(t*10.0 + .35); float body=cyl(p,.48,.075); return max(body,-coinMark(p));
-        }
-        void main(){
-          vec2 uv=(gl_FragCoord.xy-.5*u_resolution)/u_resolution.y;
-          vec3 ro=vec3(0.,.15,4.65), rd=normalize(vec3(uv,-2.65));
-          if(u_mode>.5){ro.z=4.9; rd=normalize(vec3(uv,-2.85));}
-          float d=0., glow=0.; vec3 p=ro; float hit=0.;
-          for(int i=0;i<90;i++){p=ro+rd*d;float h=map(p);glow+=.004/(.006+abs(h));if(h<.002){hit=1.;break;}d+=h;if(d>FAR)break;}
-          vec3 col=vec3(.035,.043,.045); float horizon=max(0.,1.-abs(uv.y+.15));
-          col+=vec3(.16,.08,.025)*pow(horizon,5.)*.45;
-          if(hit>.5){vec3 n=normal(p);vec3 l=normalize(vec3(-.6,1.1,1.4));float diff=max(dot(n,l),0.);float rim=pow(1.-max(dot(n,-rd),0.),2.);col=mix(vec3(.12,.095,.06),vec3(.9,.59,.25),diff*.86+rim*.22);
-            if(u_mode<.5){vec3 dq=p;dq.xy*=rot(-u_time*4.8);dq.xz*=rot(-u_time*6.2);float cavity=1.-smoothstep(.005,.055,diePips(dq));col=mix(col,vec3(.018,.012,.008),clamp(cavity,0.,1.));}
-          }
-          col+=vec3(.34,.17,.05)*glow*.018*u_running;
-          float vign=1.-smoothstep(.35,1.1,length(uv)); col*=.58+.42*vign;
-          gl_FragColor=vec4(pow(col,vec3(.82)),1.);
-        }`;
-      const compile = (type, source) => { const shader = gl.createShader(type); gl.shaderSource(shader, source); gl.compileShader(shader); return shader; };
-      const program = gl.createProgram(); gl.attachShader(program, compile(gl.VERTEX_SHADER, vertexSource)); gl.attachShader(program, compile(gl.FRAGMENT_SHADER, fragmentSource)); gl.linkProgram(program);
-      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
-      gl.useProgram(program);
-      const buffer = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buffer); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]), gl.STATIC_DRAW);
-      const position = gl.getAttribLocation(program, 'p'); gl.enableVertexAttribArray(position); gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
-      const uniforms = { resolution: gl.getUniformLocation(program,'u_resolution'), time: gl.getUniformLocation(program,'u_time'), mode: gl.getUniformLocation(program,'u_mode'), running: gl.getUniformLocation(program,'u_running'), result: gl.getUniformLocation(program,'u_result') };
-      let mode = 0, running = 0, started = performance.now();
-      function resize(){ const dpr=Math.min(devicePixelRatio||1,2), w=Math.max(1,stage.clientWidth*dpr), h=Math.max(1,stage.clientHeight*dpr); if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;gl.viewport(0,0,w,h);} }
-      let resultSide=0;
-      function frame(now){ resize(); gl.uniform2f(uniforms.resolution,canvas.width,canvas.height); gl.uniform1f(uniforms.time,running?Math.min((now-started)/1000,1.45):0); gl.uniform1f(uniforms.mode,mode); gl.uniform1f(uniforms.running,running); gl.uniform1f(uniforms.result,resultSide); gl.drawArrays(gl.TRIANGLES,0,6); requestAnimationFrame(frame); }
-      requestAnimationFrame(frame);
-
-      const valueEl=document.getElementById('randomizerValue'), labelEl=document.getElementById('randomizerLabel');
-      const diceBtn=document.getElementById('rollDiceBtn'), coinBtn=document.getElementById('flipCoinBtn');
-      const imperialIcon='<svg viewBox="0 0 24 24" aria-label="Empire" style="width:34px;height:34px;display:inline-block;vertical-align:middle;fill:currentColor"><circle cx="12" cy="12" r="8.3" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 4.4 14 9l4.4-2.2-2.1 4.5 4.8.7-4.8.8 2.1 4.4L14 15l-2 4.6-2-4.6-4.4 2.2 2.1-4.4-4.8-.8 4.8-.7-2.1-4.5L10 9l2-4.6Z"/></svg>';
-      const rebelIcon='<svg viewBox="0 0 24 24" aria-label="Rebels" style="width:38px;height:38px;display:inline-block;vertical-align:middle;fill:currentColor"><path d="M3 17.8c3.1-1.2 5.2-3.3 6.5-6.2L6.1 9.2l4.7-1.1L12 3l1.3 5.1L18 9.2l-3.4 2.4c1.3 2.9 3.4 5 6.5 6.2-4.3 1-7.3-.2-9.1-3.3C10.3 17.6 7.3 18.8 3 17.8Z"/></svg>';
-      function setBusy(busy){diceBtn.disabled=busy;coinBtn.disabled=busy;running=busy?1:0;}
-      function animate(kind, result){
-        mode=kind==='coin'?1:0; resultSide=result?1:0; started=performance.now(); setBusy(true); document.querySelector('.randomizer-console').classList.add('randomizer-active'); valueEl.textContent='…'; labelEl.textContent=kind==='coin'?'FLIPPING // CALCULATING':'ROLLING // CALCULATING';
-        setTimeout(()=>{setBusy(false); if(kind==='coin'){valueEl.innerHTML=result?imperialIcon:rebelIcon;labelEl.textContent=(result?'HEADS // EMPIRE':'TAILS // REBELS')+' // TAP TO RETURN';}else{valueEl.textContent=String(result);labelEl.textContent='DIE RESULT // LOCKED // TAP TO RETURN';}},kind==='coin'?1600:1450);
-      }
-      diceBtn.addEventListener('click',()=>animate('dice',Math.floor(Math.random()*6)+1));
-      coinBtn.addEventListener('click',()=>animate('coin',Math.random()<.5));
-      stage.addEventListener('click',()=>{if(!running)document.querySelector('.randomizer-console').classList.remove('randomizer-active');});
-    })();
-  </script>
-  <script>
-    // Mesh-based pass: this supersedes the procedural canvas above with actual
-    // rounded geometry, physical pip meshes, face textures, and quaternions.
-    (() => {
-      if (!window.THREE) return;
-      const oldCanvas=document.getElementById('randomizerCanvas'), stage=oldCanvas && oldCanvas.parentElement;
-      if (!stage) return;
-      const canvas=document.createElement('canvas'); canvas.id='meshRandomizerCanvas'; stage.prepend(canvas);
-      const THREE=window.THREE, renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
-      renderer.setPixelRatio(Math.min(devicePixelRatio||1,2)); renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap; renderer.outputColorSpace=THREE.SRGBColorSpace;
-      const scene=new THREE.Scene(); scene.fog=new THREE.Fog(0x07090a,7,14);
-      const camera=new THREE.PerspectiveCamera(33,1,.1,30); camera.position.set(0,1.25,6.7); camera.lookAt(0,.2,0);
-      scene.add(new THREE.HemisphereLight(0xf4dfc4,0x0b1113,1.35)); const key=new THREE.DirectionalLight(0xffcf91,3); key.position.set(-3,5,4); key.castShadow=true; key.shadow.mapSize.set(1024,1024); scene.add(key); const fill=new THREE.PointLight(0x55a5a4,2.4,9); fill.position.set(3,2,3); scene.add(fill);
-      const table=new THREE.Mesh(new THREE.PlaneGeometry(18,18),new THREE.MeshStandardMaterial({color:0x111719,roughness:.83,metalness:.15})); table.rotation.x=-Math.PI/2;table.position.y=-.8;table.receiveShadow=true;scene.add(table);
-      const shadow=new THREE.Mesh(new THREE.CircleGeometry(1,48),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.4,depthWrite:false})); shadow.rotation.x=-Math.PI/2;shadow.position.y=-.79;shadow.scale.set(1.2,.5,1);scene.add(shadow);
-      const die=new THREE.Group(), dieMat=new THREE.MeshStandardMaterial({color:0xb1733b,roughness:.3,metalness:.5}), pipMat=new THREE.MeshStandardMaterial({color:0x120d09,roughness:.52,metalness:.12});
-      const Box=THREE.RoundedBoxGeometry||THREE.BoxGeometry; const body=new THREE.Mesh(new Box(.95,.95,.95,.13,5),dieMat);body.castShadow=true;body.receiveShadow=true;die.add(body);
-      const pipGeo=new THREE.SphereGeometry(.096,20,12), patterns={1:[[0,0]],2:[[-1,1],[1,-1]],3:[[-1,1],[0,0],[1,-1]],4:[[-1,1],[1,1],[-1,-1],[1,-1]],5:[[-1,1],[1,1],[0,0],[-1,-1],[1,-1]],6:[[-1,1],[-1,0],[-1,-1],[1,1],[1,0],[1,-1]]};
-      function face(n,axis,sign){patterns[n].forEach(([a,b])=>{const m=new THREE.Mesh(pipGeo,pipMat),s=.18;if(axis==='z')m.position.set(a*s,b*s,sign*.447);if(axis==='x')m.position.set(sign*.447,a*s,b*s);if(axis==='y')m.position.set(a*s,sign*.447,b*s);m.castShadow=true;die.add(m);});}
-      face(5,'z',1);face(4,'z',-1);face(3,'x',1);face(6,'x',-1);face(2,'y',1);face(1,'y',-1);scene.add(die);
-      function iconTexture(rebel){const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d');x.fillStyle='#bd8240';x.fillRect(0,0,256,256);x.strokeStyle='#28170f';x.fillStyle='#28170f';x.lineWidth=9;x.beginPath();x.arc(128,128,95,0,Math.PI*2);x.stroke();if(!rebel){x.beginPath();x.arc(128,128,50,0,Math.PI*2);x.stroke();for(let i=0;i<6;i++){const a=i*Math.PI/3;x.beginPath();x.moveTo(128+Math.cos(a)*20,128+Math.sin(a)*20);x.lineTo(128+Math.cos(a)*76,128+Math.sin(a)*76);x.stroke();}}else{x.beginPath();x.moveTo(128,43);x.lineTo(204,174);x.lineTo(52,174);x.closePath();x.stroke();x.beginPath();x.moveTo(128,91);x.lineTo(176,174);x.moveTo(128,91);x.lineTo(80,174);x.stroke();}return new THREE.CanvasTexture(c);}
-      const coin=new THREE.Mesh(new THREE.CylinderGeometry(.62,.62,.16,64),[new THREE.MeshStandardMaterial({color:0xa66e32,roughness:.28,metalness:.7}),new THREE.MeshStandardMaterial({map:iconTexture(false),roughness:.32,metalness:.56}),new THREE.MeshStandardMaterial({map:iconTexture(true),roughness:.32,metalness:.56})]);coin.rotation.x=Math.PI/2;coin.castShadow=true;coin.receiveShadow=true;coin.visible=false;scene.add(coin);
-      const consoleEl=document.querySelector('.randomizer-console'), valueEl=document.getElementById('randomizerValue'), labelEl=document.getElementById('randomizerLabel'); const oldDice=document.getElementById('rollDiceBtn'),oldCoin=document.getElementById('flipCoinBtn'); const diceBtn=oldDice.cloneNode(true),coinBtn=oldCoin.cloneNode(true);oldDice.replaceWith(diceBtn);oldCoin.replaceWith(coinBtn);
-      const empire='<svg viewBox="0 0 24 24" aria-label="Empire" style="width:34px;height:34px;display:inline-block;vertical-align:middle;fill:currentColor"><circle cx="12" cy="12" r="8.3" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 4.4 14 9l4.4-2.2-2.1 4.5 2.1 4.4L14 15l-2 4.6-2-4.6-4.4 2.2 2.1-4.4-4.8-.8 4.8-.7-2.1-4.5L10 9l2-4.6Z"/></svg>',rebel='<svg viewBox="0 0 24 24" aria-label="Rebels" style="width:38px;height:38px;display:inline-block;vertical-align:middle;fill:currentColor"><path d="M3 17.8c3.1-1.2 5.2-3.3 6.5-6.2L6.1 9.2l4.7-1.1L12 3l1.3 5.1L18 9.2l-3.4 2.4c1.3 2.9 3.4 5 6.5 6.2-4.3 1-7.3-.2-9.1-3.3C10.3 17.6 7.3 18.8 3 17.8Z"/></svg>';
-      let active=false,kind='dice',result=1,start=0,startQ=new THREE.Quaternion(),targetQ=new THREE.Quaternion();
-      function resize(){const w=stage.clientWidth||innerWidth,h=stage.clientHeight||innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
-      function target(n,isCoin){if(isCoin)return new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI/2,0,n?0:Math.PI));const e={1:[-Math.PI/2,0,0],2:[Math.PI/2,0,0],3:[0,-Math.PI/2,0],4:[0,Math.PI,0],5:[0,0,0],6:[0,Math.PI/2,0]}[n];return new THREE.Quaternion().setFromEuler(new THREE.Euler(...e));}
-      function begin(k,r){kind=k;result=r;active=true;start=performance.now();const obj=k==='dice'?die:coin;startQ.copy(obj.quaternion);targetQ.copy(target(r,k==='coin'));die.visible=k==='dice';coin.visible=k==='coin';consoleEl.classList.add('randomizer-active');diceBtn.disabled=true;coinBtn.disabled=true;valueEl.textContent='…';labelEl.textContent=k==='coin'?'FLIPPING // CALCULATING':'ROLLING // CALCULATING';}
-      function end(){active=false;const obj=kind==='dice'?die:coin;obj.position.set(0,.1,0);obj.quaternion.copy(targetQ);diceBtn.disabled=false;coinBtn.disabled=false;if(kind==='coin'){valueEl.innerHTML=result?empire:rebel;labelEl.textContent=(result?'HEADS // EMPIRE':'TAILS // REBELS')+' // TAP TO RETURN';}else{valueEl.textContent=result;labelEl.textContent='DIE RESULT // LOCKED // TAP TO RETURN';}}
-      function frame(now){resize();if(active){const obj=kind==='dice'?die:coin,p=Math.min((now-start)/(kind==='coin'?1.8:1.7),1),settle=p<.68?0:(p-.68)/.32,ease=settle*settle*(3-2*settle),travel=Math.min(p/.8,1);obj.position.set(p<.8?-2.3+4.6*travel:0,.1+Math.sin(travel*Math.PI)*(kind==='coin'?1.8:1.1),0);obj.quaternion.slerpQuaternions(startQ,targetQ,ease);obj.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(p<.8?p*18:0,p<.8?p*13:0,p<.8?p*9:0)));shadow.position.x=obj.position.x;shadow.material.opacity=.38*(1-Math.min(obj.position.y/2.6,.72));if(p>=1)end();}renderer.render(scene,camera);requestAnimationFrame(frame);}
-      diceBtn.addEventListener('click',e=>{e.stopPropagation();begin('dice',Math.floor(Math.random()*6)+1);});coinBtn.addEventListener('click',e=>{e.stopPropagation();begin('coin',Math.random()<.5);});stage.addEventListener('click',()=>{if(!active)consoleEl.classList.remove('randomizer-active');});resize();requestAnimationFrame(frame);
-    })();
-  </script>
-  <script>
-    // CSS 3D presentation pass inspired by Dice 3D's focused roll area:
-    // markings live inside face elements, so they stay physically attached.
-    (() => {
-      const sourceDice=document.getElementById('rollDiceBtn'), sourceCoin=document.getElementById('flipCoinBtn'), sourceCanvas=document.getElementById('meshRandomizerCanvas');
-      const stage=sourceCanvas && sourceCanvas.parentElement, consoleEl=document.querySelector('.randomizer-console');
-      if(!stage||!consoleEl) return;
-      const diceBtn=sourceDice.cloneNode(true), coinBtn=sourceCoin.cloneNode(true); sourceDice.replaceWith(diceBtn); sourceCoin.replaceWith(coinBtn); sourceCanvas.style.display='none';
-      const cssStage=document.createElement('div'); cssStage.className='css-dice-stage'; cssStage.innerHTML='<div class="css-dice-shadow"></div><div class="css-die-wrap"><div class="css-die"></div><div class="css-coin"><div class="css-coin-face">IMPERIAL</div><div class="css-coin-face back">REBELS</div></div></div>';
-      stage.appendChild(cssStage); const die=cssStage.querySelector('.css-die'),coin=cssStage.querySelector('.css-coin'),wrap=cssStage.querySelector('.css-die-wrap'),shadow=cssStage.querySelector('.css-dice-shadow');
-      const faceNames=['front','back','right','left','top','bottom'], faceValues=[5,4,3,6,2,1]; faceNames.forEach((name,i)=>{const face=document.createElement('div');face.className='css-die-face '+name;face.dataset.value=faceValues[i];for(let j=0;j<9;j++)face.insertAdjacentHTML('beforeend','<span class="css-pip"></span>');die.appendChild(face);});
-      const valueEl=document.getElementById('randomizerValue'),labelEl=document.getElementById('randomizerLabel'); let active=false,started=0,result=1,target={x:0,y:0,z:0};
-      const targets={1:{x:-90,y:0,z:0},2:{x:90,y:0,z:0},3:{x:0,y:-90,z:0},4:{x:0,y:180,z:0},5:{x:0,y:0,z:0},6:{x:0,y:90,z:0}};
-      function begin(n,isCoin){result=n;target=isCoin?{x:0,y:n?0:180,z:0}:targets[n];active=true;started=performance.now();die.style.display=isCoin?'none':'block';coin.style.display=isCoin?'block':'none';consoleEl.classList.add('randomizer-active');diceBtn.disabled=true;coinBtn.disabled=true;valueEl.textContent='…';labelEl.textContent=isCoin?'FLIPPING // CALCULATING':'ROLLING // CALCULATING';kind=isCoin?'coin':'dice';}
-      let kind='dice';
-      function end(){active=false;wrap.style.transform=`translate3d(0,${kind==='coin'?110:0}px,0)`;const obj=kind==='coin'?coin:die;obj.style.transform=`rotateX(${target.x}deg) rotateY(${target.y}deg) rotateZ(${target.z}deg)`;shadow.style.transform='translateY(210px) scale(1)';diceBtn.disabled=false;coinBtn.disabled=false;if(kind==='coin'){valueEl.textContent=result?'IMPERIAL':'REBELS';labelEl.textContent=(result?'HEADS // EMPIRE':'TAILS // REBELS')+' // TAP TO RETURN';}else{valueEl.textContent=String(result);labelEl.textContent='DIE RESULT // LOCKED // TAP TO RETURN';}}
-      function frame(now){if(active){const duration=kind==='coin'?1300:1700,p=Math.min((now-started)/duration,1),drop=Math.min(p/(kind==='coin'?.55:.58),1),settle=p<.66?0:(p-.66)/.34,ease=settle*settle*(3-2*settle),x=kind==='coin'?0:-30+30*drop,impactStart=kind==='coin'?.55:.58,bounce=p>impactStart?-Math.abs(Math.sin(Math.min((p-impactStart)/.2,1)*Math.PI*2.2))*(kind==='coin'?24:42)*(1-Math.min((p-impactStart)/.2,1)):0,floorY=kind==='coin'?110:0,y=-285+285*drop+floorY+bounce;wrap.style.transform=`translate3d(${x}vw,${y}px,0) scale(${.82+drop*.12})`;const obj=kind==='coin'?coin:die;obj.style.transform=kind==='coin'?`rotateX(${p<.66?p*1440:target.x*ease+p*0}deg) rotateY(${target.y*ease}deg) rotateZ(0deg)`:`rotateX(${target.x*ease+p*920}deg) rotateY(${target.y*ease+p*760}deg) rotateZ(${target.z*ease}deg)`;shadow.style.transform=`translate(${x*.65}vw,${210-y*.08}px) scale(${1.05-Math.abs(y)/420})`;if(p>=1)end();}requestAnimationFrame(frame);}
-      diceBtn.addEventListener('click',e=>{e.stopPropagation();begin(Math.floor(Math.random()*6)+1,false);});coinBtn.addEventListener('click',e=>{e.stopPropagation();begin(Math.random()<.5?1:0,true);});stage.addEventListener('click',()=>{if(!active)consoleEl.classList.remove('randomizer-active');}); requestAnimationFrame(frame);
-    })();
-  </script>
-  <script>
     // ============================================================================
-    // 1. COMPLETE STAR WARS: UNLIMITED BASE DATABASE (GEVERIFIEERDE NUMMERS & ASPECTEN)
+    // 1. DYNAMISCHE BASE DATABASE VIA SWUAPI + SWUDB AFBEELDINGEN ENGINE
     // ============================================================================
-    const SETS_META = [
-      { code: 'ALL', label: 'Alle Sets' },
-      { code: 'SOR', label: 'Set 1: SOR' },
-      { code: 'SHD', label: 'Set 2: SHD' },
-      { code: 'TWI', label: 'Set 3: TWI' },
-      { code: 'JTL', label: 'Set 4: JTL' },
-      { code: 'LOF', label: 'Set 5: LOF' },
-      { code: 'SEC', label: 'Set 6: SEC' },
-      { code: 'LAW', label: 'Set 7: LAW' },
-      { code: 'ASH', label: 'Set 8: ASH' },
-      { code: 'HMW', label: 'Set 9: HMW' },
-      { code: 'TS26', label: 'Twin Suns / Special' }
-    ];
+    const SWUAPI_BASES_URL = 'https://api.swuapi.com/cards?type=Base&limit=500';
 
     const ASPECT_META = [
       { code: 'ALL', label: 'Alle Aspecten' },
@@ -785,131 +720,125 @@
       Neutral:    { hex: '#475569', dark: '#1e293b', border: '#94a3b8' }
     };
 
-    const INITIAL_BASES = [
-      // SET 1: Spark of Rebellion (SOR 019 - 030) — 12 Bases
-      { id: 'SOR-019', set: 'SOR', num: '019', name: 'Security Complex', planet: 'Scarif', aspect: 'Vigilance', hp: 25 },
-      { id: 'SOR-020', set: 'SOR', num: '020', name: 'Capital City', planet: 'Lothal', aspect: 'Vigilance', hp: 30 },
-      { id: 'SOR-021', set: 'SOR', num: '021', name: 'Dagobah Swamp', planet: 'Dagobah', aspect: 'Vigilance', hp: 30 },
-      { id: 'SOR-022', set: 'SOR', num: '022', name: 'Energy Conversion Lab', planet: 'Eadu', aspect: 'Command', hp: 25 },
-      { id: 'SOR-023', set: 'SOR', num: '023', name: 'Command Center', planet: 'Death Star', aspect: 'Command', hp: 30 },
-      { id: 'SOR-024', set: 'SOR', num: '024', name: 'Echo Base', planet: 'Hoth', aspect: 'Command', hp: 30 },
-      { id: 'SOR-025', set: 'SOR', num: '025', name: 'Tarkintown', planet: 'Lothal', aspect: 'Aggression', hp: 25 },
-      { id: 'SOR-026', set: 'SOR', num: '026', name: 'Catacombs of Cadera', planet: 'Jedha', aspect: 'Aggression', hp: 30 },
-      { id: 'SOR-027', set: 'SOR', num: '027', name: 'Kestro City', planet: 'Vardos', aspect: 'Aggression', hp: 30 },
-      { id: 'SOR-028', set: 'SOR', num: '028', name: 'Jedha City', planet: 'Jedha', aspect: 'Cunning', hp: 25 },
-      { id: 'SOR-029', set: 'SOR', num: '029', name: "Administrator's Tower", planet: 'Cloud City / Bespin', aspect: 'Cunning', hp: 30 },
-      { id: 'SOR-030', set: 'SOR', num: '030', name: 'Chopper Base', planet: 'Atollon', aspect: 'Cunning', hp: 30 },
+    // Bekende SWU Base-mapping op naam zodat zelfs als de API voor een kaart geen setCode of cardNumber meestuurt,
+    // SWUDB altijd het exacte set- en kaartnummer heeft voor het plaatje:
+    const KNOWN_SWUDB_MAP = {
+      'security complex': { set: 'SOR', num: '019' },
+      'capital city': { set: 'SOR', num: '020' },
+      'dagobah swamp': { set: 'SOR', num: '021' },
+      'energy conversion lab': { set: 'SOR', num: '022' },
+      'command center': { set: 'SOR', num: '023' },
+      'echo base': { set: 'SOR', num: '024' },
+      'tarkintown': { set: 'SOR', num: '025' },
+      'catacombs of cadera': { set: 'SOR', num: '026' },
+      'kestro city': { set: 'SOR', num: '027' },
+      'jedha city': { set: 'SOR', num: '028' },
+      "administrator's tower": { set: 'SOR', num: '029' },
+      'chopper base': { set: 'SOR', num: '030' },
+      'remnant science facility': { set: 'SHD', num: '019' },
+      'remote village': { set: 'SHD', num: '020' },
+      "maz kanata's castle": { set: 'SHD', num: '021' },
+      'nevarro city': { set: 'SHD', num: '022' },
+      'death watch hideout': { set: 'SHD', num: '023' },
+      'spice mines': { set: 'SHD', num: '024' },
+      'coronet city': { set: 'SHD', num: '025' },
+      "jabba's palace": { set: 'SHD', num: '026' },
+      'pau city': { set: 'TWI', num: '019' },
+      'sundari': { set: 'TWI', num: '020' },
+      'the crystal city': { set: 'TWI', num: '021' },
+      'droid manufactory': { set: 'TWI', num: '022' },
+      'lair of grievous': { set: 'TWI', num: '023' },
+      'tipoca city': { set: 'TWI', num: '024' },
+      'shadow collective camp': { set: 'TWI', num: '025' },
+      'kcm mining facility': { set: 'TWI', num: '026' },
+      'the nest': { set: 'TWI', num: '027' },
+      'petranaki arena': { set: 'TWI', num: '028' },
+      'level 1313': { set: 'TWI', num: '029' },
+      'pyke palace': { set: 'TWI', num: '030' },
+      'city in the clouds': { set: 'JTL', num: '019' },
+      'shield generator complex': { set: 'JTL', num: '020' },
+      'colossus': { set: 'JTL', num: '021' },
+      'resistance headquarters': { set: 'JTL', num: '022' },
+      'theed palace': { set: 'JTL', num: '023' },
+      'data vault': { set: 'JTL', num: '024' },
+      'thermal oscillator': { set: 'JTL', num: '025' },
+      'massassi temple': { set: 'JTL', num: '026' },
+      'nadiri dockyards': { set: 'JTL', num: '027' },
+      'nabat village': { set: 'JTL', num: '028' },
+      'mos eisley': { set: 'JTL', num: '030' },
+      'lake country': { set: 'JTL', num: '031' },
+      'vergence temple': { set: 'LOF', num: '019' },
+      'nightsister lair': { set: 'LOF', num: '020' },
+      'shadowed undercity': { set: 'LOF', num: '021' },
+      'mystic monastery': { set: 'LOF', num: '022' },
+      'jedi temple': { set: 'LOF', num: '023' },
+      'starlight temple': { set: 'LOF', num: '024' },
+      'temple of destruction': { set: 'LOF', num: '025' },
+      'fortress vader': { set: 'LOF', num: '026' },
+      'strangled cliffs': { set: 'LOF', num: '027' },
+      'tomb of eilram': { set: 'LOF', num: '028' },
+      'crystal caves': { set: 'LOF', num: '029' },
+      'the holy city': { set: 'LOF', num: '030' },
+      'rix road': { set: 'SEC', num: '019' },
+      'uscru entertainment district': { set: 'SEC', num: '020' },
+      'republic city': { set: 'SEC', num: '021' },
+      'senate rotunda': { set: 'SEC', num: '022' },
+      'imperial prison complex': { set: 'SEC', num: '023' },
+      'naval intelligence hq': { set: 'SEC', num: '024' },
+      'amnesty housing': { set: 'SEC', num: '025' },
+      'mount tantiss': { set: 'SEC', num: '026' },
+      'alliance outpost': { set: 'LAW', num: '019' },
+      "daimyo's palace": { set: 'LAW', num: '020' },
+      'coaxium mine': { set: 'LAW', num: '021' },
+      'aldhani garrison': { set: 'LAW', num: '022' },
+      'great pit of carkoon': { set: 'LAW', num: '023' },
+      'imperial command complex': { set: 'LAW', num: '024' },
+      'contested caverns': { set: 'LAW', num: '025' },
+      'shipbreaking yard': { set: 'LAW', num: '026' },
+      'stygeon spire': { set: 'LAW', num: '027' },
+      'canto bight': { set: 'LAW', num: '028' },
+      'citadel research center': { set: 'LAW', num: '029' },
+      'partisan hideout': { set: 'LAW', num: '030' },
+      'fortress of the great mothers': { set: 'ASH', num: '019' },
+      'nevarro city, restored': { set: 'ASH', num: '020' },
+      "emperor's throne room": { set: 'ASH', num: '021' },
+      'kryze castle': { set: 'ASH', num: '022' },
+      'ancient henge': { set: 'ASH', num: '023' },
+      'dragonsnake bog': { set: 'ASH', num: '024' },
+      "emperor's observatory": { set: 'ASH', num: '025' },
+      'freetown': { set: 'ASH', num: '026' }
+    };
 
-      // SET 2: Shadows of the Galaxy (SHD 019 - 026) — Exact 8 Bases
-      { id: 'SHD-019', set: 'SHD', num: '019', name: 'Remnant Science Facility', planet: 'Nevarro', aspect: 'Vigilance', hp: 30 },
-      { id: 'SHD-020', set: 'SHD', num: '020', name: 'Remote Village', planet: 'Sorgan', aspect: 'Vigilance', hp: 30 },
-      { id: 'SHD-021', set: 'SHD', num: '021', name: "Maz Kanata's Castle", planet: 'Takodana', aspect: 'Command', hp: 30 },
-      { id: 'SHD-022', set: 'SHD', num: '022', name: 'Nevarro City', planet: 'Nevarro', aspect: 'Command', hp: 30 },
-      { id: 'SHD-023', set: 'SHD', num: '023', name: 'Death Watch Hideout', planet: 'Concordia / Mandalore', aspect: 'Aggression', hp: 30 },
-      { id: 'SHD-024', set: 'SHD', num: '024', name: 'Spice Mines', planet: 'Kessel', aspect: 'Aggression', hp: 30 },
-      { id: 'SHD-025', set: 'SHD', num: '025', name: 'Coronet City', planet: 'Corellia', aspect: 'Cunning', hp: 30 },
-      { id: 'SHD-026', set: 'SHD', num: '026', name: "Jabba's Palace", planet: 'Tatooine', aspect: 'Cunning', hp: 30 },
+    let allBases = [];
+    let customUploadedBases = [];
+    let isLoadingApiBases = true;
 
-      // SET 3: Twilight of the Republic (TWI 019 - 030) — 12 Bases
-      { id: 'TWI-019', set: 'TWI', num: '019', name: 'Pau City', planet: 'Utapau', aspect: 'Vigilance', hp: 26 },
-      { id: 'TWI-020', set: 'TWI', num: '020', name: 'Sundari', planet: 'Mandalore', aspect: 'Vigilance', hp: 30 },
-      { id: 'TWI-021', set: 'TWI', num: '021', name: 'The Crystal City', planet: 'Christophsis', aspect: 'Vigilance', hp: 30 },
-      { id: 'TWI-022', set: 'TWI', num: '022', name: 'Droid Manufactory', planet: 'Geonosis', aspect: 'Command', hp: 24 },
-      { id: 'TWI-023', set: 'TWI', num: '023', name: 'Lair of Grievous', planet: 'Vassek', aspect: 'Command', hp: 30 },
-      { id: 'TWI-024', set: 'TWI', num: '024', name: 'Tipoca City', planet: 'Kamino', aspect: 'Command', hp: 30 },
-      { id: 'TWI-025', set: 'TWI', num: '025', name: 'Shadow Collective Camp', planet: 'Zanbar', aspect: 'Aggression', hp: 25 },
-      { id: 'TWI-026', set: 'TWI', num: '026', name: 'KCM Mining Facility', planet: 'Subterrel', aspect: 'Aggression', hp: 30 },
-      { id: 'TWI-027', set: 'TWI', num: '027', name: 'The Nest', planet: 'Anaxes', aspect: 'Aggression', hp: 30 },
-      { id: 'TWI-028', set: 'TWI', num: '028', name: 'Petranaki Arena', planet: 'Geonosis', aspect: 'Cunning', hp: 26 },
-      { id: 'TWI-029', set: 'TWI', num: '029', name: 'Level 1313', planet: 'Coruscant', aspect: 'Cunning', hp: 30 },
-      { id: 'TWI-030', set: 'TWI', num: '030', name: 'Pyke Palace', planet: 'Oba Diah', aspect: 'Cunning', hp: 30 },
+    // Verwijder de oude foutieve cache ('swu_api_bases_cache_v1') waarin alles 'SWU-001' heette
+    try {
+      localStorage.removeItem('swu_api_bases_cache_v1');
+      const savedCustom = localStorage.getItem('swu_custom_bases_v2');
+      if (savedCustom) {
+        const parsedCustom = JSON.parse(savedCustom);
+        if (Array.isArray(parsedCustom)) customUploadedBases = parsedCustom;
+      }
+      const cachedApiBases = localStorage.getItem('swu_api_bases_cache_v2');
+      if (cachedApiBases) {
+        const parsedCache = JSON.parse(cachedApiBases);
+        if (Array.isArray(parsedCache) && parsedCache.length > 0) {
+          allBases = [...customUploadedBases, ...parsedCache];
+        }
+      }
+    } catch (e) {}
 
-      // SET 4: Jump to Lightspeed (JTL 019 - 031) — 13 Bases
-      { id: 'JTL-019', set: 'JTL', num: '019', name: 'City in the Clouds', planet: 'Cloud City / Bespin', aspect: 'Vigilance', hp: 30 },
-      { id: 'JTL-020', set: 'JTL', num: '020', name: 'Shield Generator Complex', planet: 'Endor', aspect: 'Vigilance', hp: 30 },
-      { id: 'JTL-021', set: 'JTL', num: '021', name: 'Colossus', planet: 'Castilon', aspect: 'Vigilance', hp: 35 },
-      { id: 'JTL-022', set: 'JTL', num: '022', name: 'Resistance Headquarters', planet: "D'Qar", aspect: 'Command', hp: 30 },
-      { id: 'JTL-023', set: 'JTL', num: '023', name: 'Theed Palace', planet: 'Naboo', aspect: 'Command', hp: 30 },
-      { id: 'JTL-024', set: 'JTL', num: '024', name: 'Data Vault', planet: 'Scarif', aspect: 'Command', hp: 33 },
-      { id: 'JTL-025', set: 'JTL', num: '025', name: 'Thermal Oscillator', planet: 'Starkiller Base / Ilum', aspect: 'Aggression', hp: 27 },
-      { id: 'JTL-026', set: 'JTL', num: '026', name: 'Massassi Temple', planet: 'Yavin 4', aspect: 'Aggression', hp: 30 },
-      { id: 'JTL-027', set: 'JTL', num: '027', name: 'Nadiri Dockyards', planet: 'Nadiri', aspect: 'Aggression', hp: 30 },
-      { id: 'JTL-028', set: 'JTL', num: '028', name: 'Nabat Village', planet: 'Ryloth', aspect: 'Cunning', hp: 27 },
-      { id: 'JTL-029', set: 'JTL', num: '029', name: 'Chopper Base (Atollon)', planet: 'Atollon', aspect: 'Cunning', hp: 30 },
-      { id: 'JTL-030', set: 'JTL', num: '030', name: 'Mos Eisley', planet: 'Tatooine', aspect: 'Cunning', hp: 30 },
-      { id: 'JTL-031', set: 'JTL', num: '031', name: 'Lake Country', planet: 'Naboo', aspect: 'Neutral', hp: 34 },
-
-      // SET 5: Legends of the Force (LOF 019 - 030) — 12 Bases
-      { id: 'LOF-019', set: 'LOF', num: '019', name: 'Vergence Temple', planet: 'Lothal', aspect: 'Vigilance', hp: 28 },
-      { id: 'LOF-020', set: 'LOF', num: '020', name: 'Nightsister Lair', planet: 'Dathomir', aspect: 'Vigilance', hp: 30 },
-      { id: 'LOF-021', set: 'LOF', num: '021', name: 'Shadowed Undercity', planet: 'Coruscant', aspect: 'Vigilance', hp: 30 },
-      { id: 'LOF-022', set: 'LOF', num: '022', name: 'Mystic Monastery', planet: 'Mortis', aspect: 'Command', hp: 28 },
-      { id: 'LOF-023', set: 'LOF', num: '023', name: 'Jedi Temple', planet: 'Coruscant', aspect: 'Command', hp: 30 },
-      { id: 'LOF-024', set: 'LOF', num: '024', name: 'Starlight Temple', planet: 'Starlight Beacon', aspect: 'Command', hp: 30 },
-      { id: 'LOF-025', set: 'LOF', num: '025', name: 'Temple of Destruction', planet: 'Malachor', aspect: 'Aggression', hp: 28 },
-      { id: 'LOF-026', set: 'LOF', num: '026', name: 'Fortress Vader', planet: 'Mustafar', aspect: 'Aggression', hp: 30 },
-      { id: 'LOF-027', set: 'LOF', num: '027', name: 'Strangled Cliffs', planet: 'Dathomir', aspect: 'Aggression', hp: 30 },
-      { id: 'LOF-028', set: 'LOF', num: '028', name: 'Tomb of Eilram', planet: 'Zeffo', aspect: 'Cunning', hp: 28 },
-      { id: 'LOF-029', set: 'LOF', num: '029', name: 'Crystal Caves', planet: 'Ilum', aspect: 'Cunning', hp: 30 },
-      { id: 'LOF-030', set: 'LOF', num: '030', name: 'The Holy City', planet: 'Jedha', aspect: 'Cunning', hp: 30 },
-
-      // SET 6: Secrets of Power (SEC 019 - 026) — 8 Bases
-      { id: 'SEC-019', set: 'SEC', num: '019', name: 'Rix Road', planet: 'Ferrix', aspect: 'Vigilance', hp: 30 },
-      { id: 'SEC-020', set: 'SEC', num: '020', name: 'Uscru Entertainment District', planet: 'Coruscant', aspect: 'Vigilance', hp: 30 },
-      { id: 'SEC-021', set: 'SEC', num: '021', name: 'Republic City', planet: 'Hosnian Prime', aspect: 'Command', hp: 30 },
-      { id: 'SEC-022', set: 'SEC', num: '022', name: 'Senate Rotunda', planet: 'Coruscant', aspect: 'Command', hp: 30 },
-      { id: 'SEC-023', set: 'SEC', num: '023', name: 'Imperial Prison Complex', planet: 'Narkina 5', aspect: 'Aggression', hp: 30 },
-      { id: 'SEC-024', set: 'SEC', num: '024', name: 'Naval Intelligence HQ', planet: 'Coruscant', aspect: 'Aggression', hp: 30 },
-      { id: 'SEC-025', set: 'SEC', num: '025', name: 'Amnesty Housing', planet: 'Coruscant', aspect: 'Cunning', hp: 30 },
-      { id: 'SEC-026', set: 'SEC', num: '026', name: 'Mount Tantiss', planet: 'Wayland', aspect: 'Cunning', hp: 30 },
-
-      // SET 7: A Lawless Time (LAW 019 - 030) — 12 Bases
-      { id: 'LAW-019', set: 'LAW', num: '019', name: 'Alliance Outpost', planet: 'Yavin 4', aspect: 'Vigilance', hp: 30 },
-      { id: 'LAW-020', set: 'LAW', num: '020', name: "Daimyo's Palace", planet: 'Tatooine', aspect: 'Vigilance', hp: 30 },
-      { id: 'LAW-021', set: 'LAW', num: '021', name: 'Coaxium Mine', planet: 'Kessel', aspect: 'Vigilance', hp: 28 },
-      { id: 'LAW-022', set: 'LAW', num: '022', name: 'Aldhani Garrison', planet: 'Aldhani', aspect: 'Command', hp: 30 },
-      { id: 'LAW-023', set: 'LAW', num: '023', name: 'Great Pit of Carkoon', planet: 'Tatooine', aspect: 'Command', hp: 30 },
-      { id: 'LAW-024', set: 'LAW', num: '024', name: 'Imperial Command Complex', planet: 'Scarif', aspect: 'Command', hp: 28 },
-      { id: 'LAW-025', set: 'LAW', num: '025', name: 'Contested Caverns', planet: 'Jedha', aspect: 'Aggression', hp: 30 },
-      { id: 'LAW-026', set: 'LAW', num: '026', name: 'Shipbreaking Yard', planet: 'Bracca', aspect: 'Aggression', hp: 30 },
-      { id: 'LAW-027', set: 'LAW', num: '027', name: 'Stygeon Spire', planet: 'Stygeon Prime', aspect: 'Aggression', hp: 28 },
-      { id: 'LAW-028', set: 'LAW', num: '028', name: 'Canto Bight', planet: 'Cantonica', aspect: 'Cunning', hp: 30 },
-      { id: 'LAW-029', set: 'LAW', num: '029', name: 'Citadel Research Center', planet: 'Scarif', aspect: 'Cunning', hp: 28 },
-      { id: 'LAW-030', set: 'LAW', num: '030', name: 'Partisan Hideout', planet: 'Jedha', aspect: 'Cunning', hp: 30 },
-
-      // SET 8: Ashes of the Empire (ASH 019 - 026) — 8 Bases
-      { id: 'ASH-019', set: 'ASH', num: '019', name: 'Fortress of the Great Mothers', planet: 'Peridea', aspect: 'Vigilance', hp: 30 },
-      { id: 'ASH-020', set: 'ASH', num: '020', name: 'Nevarro City, Restored', planet: 'Nevarro', aspect: 'Vigilance', hp: 30 },
-      { id: 'ASH-021', set: 'ASH', num: '021', name: "Emperor's Throne Room", planet: 'Death Star', aspect: 'Command', hp: 30 },
-      { id: 'ASH-022', set: 'ASH', num: '022', name: 'Kryze Castle', planet: 'Kalevala', aspect: 'Command', hp: 30 },
-      { id: 'ASH-023', set: 'ASH', num: '023', name: 'Ancient Henge', planet: 'Seatos', aspect: 'Aggression', hp: 30 },
-      { id: 'ASH-024', set: 'ASH', num: '024', name: 'Dragonsnake Bog', planet: 'Dagobah', aspect: 'Aggression', hp: 30 },
-      { id: 'ASH-025', set: 'ASH', num: '025', name: "Emperor's Observatory", planet: 'Pillio', aspect: 'Cunning', hp: 30 },
-      { id: 'ASH-026', set: 'ASH', num: '026', name: 'Freetown', planet: 'Tatooine', aspect: 'Cunning', hp: 30 },
-
-      // SET 9: Homeworlds (HMW 019 - 026)
-      { id: 'HMW-019', set: 'HMW', num: '019', name: 'Otoh Gunga', planet: 'Naboo', aspect: 'Vigilance', hp: 30, useSvgOnly: true },
-      { id: 'HMW-020', set: 'HMW', num: '020', name: 'Mon Cala Palace', planet: 'Mon Cala', aspect: 'Vigilance', hp: 28, useSvgOnly: true },
-      { id: 'HMW-021', set: 'HMW', num: '021', name: 'Kachirho', planet: 'Kashyyyk', aspect: 'Command', hp: 30, useSvgOnly: true },
-      { id: 'HMW-022', set: 'HMW', num: '022', name: 'Aldera Royal Palace', planet: 'Alderaan', aspect: 'Command', hp: 28, useSvgOnly: true },
-      { id: 'HMW-023', set: 'HMW', num: '023', name: 'Bright Tree Village', planet: 'Endor', aspect: 'Command', hp: 30, useSvgOnly: true },
-      { id: 'HMW-024', set: 'HMW', num: '024', name: 'Tusken Camp', planet: 'Tatooine', aspect: 'Aggression', hp: 30, useSvgOnly: true },
-      { id: 'HMW-025', set: 'HMW', num: '025', name: 'Dune Sea Outpost', planet: 'Tatooine', aspect: 'Cunning', hp: 30, useSvgOnly: true },
-      { id: 'HMW-026', set: 'HMW', num: '026', name: 'Lessu Capital', planet: 'Ryloth', aspect: 'Cunning', hp: 28, useSvgOnly: true },
-
-      // TWIN SUNS 2026 DECK BASES & INTRO BATTLE HOTH (TS26)
-      { id: 'TS26-009', set: 'TS26', num: '009', name: 'First Battle Memorial', planet: 'Coruscant', aspect: 'Vigilance', hp: 27, useSvgOnly: true },
-      { id: 'TS26-010', set: 'TS26', num: '010', name: "Dooku's Palace", planet: 'Serenno', aspect: 'Command', hp: 27, useSvgOnly: true },
-      { id: 'TS26-011', set: 'TS26', num: '011', name: "Executioner's Arena", planet: 'Geonosis', aspect: 'Aggression', hp: 27, useSvgOnly: true },
-      { id: 'TS26-012', set: 'TS26', num: '012', name: 'Sundari Palace', planet: 'Mandalore', aspect: 'Cunning', hp: 27, useSvgOnly: true },
-      { id: 'TS26-IBH1', set: 'TS26', num: '024', imgSet: 'SOR', imgNum: '024', name: 'Echo Base (Intro Battle: Hoth)', planet: 'Hoth', aspect: 'Command', hp: 30 }
-    ];
-
-    let allBases = [...INITIAL_BASES];
+    function saveCustomBases() {
+      try {
+        localStorage.setItem('swu_custom_bases_v2', JSON.stringify(customUploadedBases));
+      } catch (e) {}
+    }
 
     function createSvgBaseDataUri(base) {
       const col = ASPECT_COLORS[base.aspect] || ASPECT_COLORS.Neutral;
-      const safeName = (base.name || '').toUpperCase().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const safeName = (base.name || 'Base').toUpperCase().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       const safePlanet = (base.planet || '').toUpperCase().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 630">
         <defs>
@@ -926,12 +855,7 @@
         </defs>
         <rect width="880" height="630" fill="url(#bg)"/>
         <circle cx="440" cy="275" r="235" fill="url(#planetGlow)"/>
-        <circle cx="640" cy="150" r="58" fill="${col.border}" fill-opacity="0.28"/>
-        <circle cx="540" cy="185" r="30" fill="#ffffff" fill-opacity="0.22"/>
         <path d="M0,455 Q220,370 440,420 T880,395 L880,630 L0,630 Z" fill="#050811" fill-opacity="0.84"/>
-        <polygon points="160,445 190,260 245,260 270,445" fill="${col.border}" fill-opacity="0.22"/>
-        <polygon points="395,445 425,180 455,180 485,445" fill="#080d1a" fill-opacity="0.75"/>
-        <polygon points="585,445 615,240 675,240 700,445" fill="${col.border}" fill-opacity="0.2"/>
         <rect x="18" y="18" width="844" height="594" rx="28" fill="none" stroke="${col.border}" stroke-opacity="0.75" stroke-width="5"/>
         <rect x="170" y="34" width="540" height="44" rx="10" fill="#060911" fill-opacity="0.88" stroke="${col.border}" stroke-opacity="0.65" stroke-width="2"/>
         <text x="440" y="63" text-anchor="middle" fill="#ffffff" font-family="Orbitron, sans-serif" font-weight="800" font-size="21" letter-spacing="2">${safeName}</text>
@@ -941,32 +865,220 @@
       return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
     }
 
-    function getBaseImageCandidates(base) {
+    function normalizeAspectFromApi(rawCard) {
+      let candidates = [];
+      if (Array.isArray(rawCard.aspects)) candidates = rawCard.aspects;
+      else if (Array.isArray(rawCard.Aspects)) candidates = rawCard.Aspects;
+      else if (typeof rawCard.aspect === 'string') candidates = [rawCard.aspect];
+      else if (typeof rawCard.Aspect === 'string') candidates = [rawCard.Aspect];
+
+      for (const item of candidates) {
+        const str = typeof item === 'string' ? item : (item?.name || item?.aspect || item?.code || '');
+        const clean = str.trim().toLowerCase();
+        if (clean.includes('vigilance') || clean.includes('blue')) return 'Vigilance';
+        if (clean.includes('command') || clean.includes('green')) return 'Command';
+        if (clean.includes('aggression') || clean.includes('red')) return 'Aggression';
+        if (clean.includes('cunning') || clean.includes('yellow')) return 'Cunning';
+      }
+      return 'Neutral';
+    }
+
+    // Haal alle mogelijke afbeeldings-URLs uit het JSON-object van de API
+    function extractAllImageUrlsFromApiCard(c) {
       const urls = [];
-      if (base.customImg) urls.push(base.customImg);
+      const directFields = [
+        c.frontImageUrl,
+        c.imageUrl,
+        c.frontArt,
+        c.FrontArt,
+        c.ImageUrl,
+        c.image,
+        c.Image,
+        c.artUrl,
+        c.cardImageUrl,
+        c.thumbnailUrl,
+        c.backImageUrl,
+        c.images?.front,
+        c.images?.large,
+        c.images?.normal,
+        c.images?.small,
+        c.image_uris?.normal,
+        c.image_uris?.large
+      ];
 
-      if (!base.useSvgOnly) {
-        const setCode = (base.imgSet || base.set || 'SOR').toUpperCase();
-        const setLower = setCode.toLowerCase();
-        const numCode = String(base.imgNum || base.num || '019').padStart(3, '0');
-        const numInt = parseInt(numCode, 10);
-
-        urls.push(`https://swudb.com/images/cards/${setCode}/${numCode}.png`);
-        urls.push(`https://swudb.com/cdn-cgi/image/width=600/images/cards/${setCode}/${numCode}.png`);
-        if (!isNaN(numInt)) {
-          urls.push(`https://swudb.com/images/cards/${setCode}/${numInt}.png`);
+      directFields.forEach(val => {
+        if (typeof val === 'string' && val.trim().startsWith('http')) {
+          urls.push(val.trim());
         }
-        urls.push(`https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/swu/${setCode}/${setCode}_${numCode}_EN.png`);
-        urls.push(`https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/swu/${setCode}/${setCode}_${numCode}_EN.webp`);
-        urls.push(`https://www.swucards.info/images/cards/${setCode}-${numCode}.webp`);
-        urls.push(`https://www.swucards.info/images/cards/${setCode}-${numCode}.png`);
-        if (!isNaN(numInt)) {
-          urls.push(`https://api.swu-db.com/cards/${setLower}/${numInt}?format=image`);
+      });
+
+      // Scan ook eventuele andere velden in het object op directe .png/.webp/.jpg links (zoals cdn.starwarsunlimited.com of swudb.com)
+      Object.values(c).forEach(val => {
+        if (typeof val === 'string' && val.startsWith('http') && /\.(png|webp|jpg|jpeg)(\?|$)/i.test(val)) {
+          urls.push(val.trim());
+        }
+      });
+
+      return [...new Set(urls)];
+    }
+
+    function extractPlanetFromApiCard(c) {
+      const sub = c.subtitle || c.Subtitle || c.location || c.planet || '';
+      if (typeof sub === 'string' && sub.trim()) {
+        return sub.replace(/\s*•.*$/, '').trim();
+      }
+      const traits = c.traits || c.Traits;
+      if (Array.isArray(traits) && traits.length > 0) {
+        return traits.map(t => (typeof t === 'string' ? t : (t?.name || ''))).filter(Boolean).join(' / ');
+      }
+      return 'Star Wars Universe';
+    }
+
+    function extractSetAndNumberFromApiCard(c, cardName) {
+      let setCode = '';
+      let numStr = '';
+
+      // 1. Check collector_number / collectorNumber (bijv. "SOR_019" of "SOR-019")
+      const collectorRaw = String(c.collector_number || c.collectorNumber || c.code || c.cardId || c.slug || '');
+      const collectorMatch = collectorRaw.match(/^([A-Za-z0-9]{2,5})[_-](\d{1,4})/);
+      if (collectorMatch) {
+        setCode = collectorMatch[1].toUpperCase();
+        numStr = collectorMatch[2];
+      }
+
+      // 2. Check expliciete setCode / set_code / set velden (vermijd [object Object])
+      if (!setCode) {
+        const rawSetCandidates = [
+          c.setCode,
+          c.set_code,
+          typeof c.set === 'string' ? c.set : null,
+          c.set?.code,
+          c.set?.setCode,
+          c.set?.abbreviation,
+          c.set?.id,
+          c.expansion?.code,
+          c.expansionCode
+        ];
+        for (const cand of rawSetCandidates) {
+          if (typeof cand === 'string' && cand.trim() && !cand.includes('object')) {
+            setCode = cand.trim().toUpperCase();
+            break;
+          }
         }
       }
 
+      // 3. Check expliciete kaartnummer velden
+      if (!numStr) {
+        const rawNumCandidates = [
+          c.cardNumber,
+          c.card_number,
+          c.number,
+          c.Number,
+          c.setNumber,
+          c.set_number
+        ];
+        for (const cand of rawNumCandidates) {
+          if (cand !== undefined && cand !== null && String(cand).trim() !== '') {
+            const clean = String(cand).replace(/^.*[_-]/, '').replace(/[^0-9]/g, '');
+            if (clean) {
+              numStr = clean;
+              break;
+            }
+          }
+        }
+      }
+
+      // 4. Fallback op bekende SWUDB-kaarttabel als de API voor deze kaart geen set/nummer gaf
+      const known = KNOWN_SWUDB_MAP[(cardName || '').toLowerCase()];
+      if ((!setCode || setCode === 'SWU') && known) {
+        setCode = known.set;
+      }
+      if (!numStr && known) {
+        numStr = known.num;
+      }
+
+      if (!setCode) setCode = 'SWU';
+      const numPadded = numStr ? String(numStr).padStart(3, '0') : '';
+
+      return { setCode, numPadded };
+    }
+
+    function normalizeApiCardToBase(c, index) {
+      const cardType = String(c.type || c.Type || c.cardType || 'base').toLowerCase();
+      if (cardType && !cardType.includes('base')) return null;
+
+      // Sla Hyperspace/Foil/Showcase dubbelingen over als variantOf is ingevuld
+      if (c.variantOf !== undefined && c.variantOf !== null) return null;
+      const variantType = String(c.variantType || c.variant || c.VariantType || 'Normal').toLowerCase();
+      const isSpecialVariant = variantType.includes('hyperspace') || variantType.includes('foil') || variantType.includes('showcase');
+
+      const name = String(c.name || c.Name || c.title || c.Title || '').trim();
+      if (!name) return null;
+
+      const { setCode, numPadded } = extractSetAndNumberFromApiCard(c, name);
+
+      const hpVal = parseInt(c.hp ?? c.HP ?? c.health ?? c.hitPoints ?? 30, 10);
+      const hp = !isNaN(hpVal) && hpVal > 0 ? hpVal : 30;
+
+      const aspect = normalizeAspectFromApi(c);
+      const planet = extractPlanetFromApiCard(c);
+      const apiImages = extractAllImageUrlsFromApiCard(c);
+
+      // Gegarandeerd uniek ID per Base zodat selecteren in het menu altijd de juiste Base pakt!
+      const slugName = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const uniqueId = numPadded
+        ? `${setCode}-${numPadded}-${slugName}`
+        : `${setCode}-${slugName}-${c.uuid || c.id || index}`;
+
+      return {
+        id: uniqueId,
+        set: setCode,
+        num: numPadded || String(index + 1).padStart(3, '0'),
+        hasExactNum: Boolean(numPadded),
+        name,
+        planet,
+        aspect,
+        hp,
+        apiImages,
+        isSpecialVariant
+      };
+    }
+
+    function getBaseImageCandidates(base) {
+      const urls = [];
+      if (base.customImg) urls.push(base.customImg);
+      if (Array.isArray(base.apiImages)) {
+        base.apiImages.forEach(u => urls.push(u));
+      } else if (base.apiImg) {
+        urls.push(base.apiImg);
+      }
+
+      // Check ook of de naam in KNOWN_SWUDB_MAP staat voor directe SWUDB-afbeeldingen
+      const known = KNOWN_SWUDB_MAP[(base.name || '').toLowerCase()];
+      const effSet = (base.set && base.set !== 'SWU' && base.set !== 'CUSTOM' && base.set !== 'FILE')
+        ? String(base.set).toUpperCase()
+        : (known ? known.set : null);
+      const effNum = (base.hasExactNum && base.num)
+        ? String(base.num).padStart(3, '0')
+        : (known ? known.num : null);
+
+      if (effSet && effNum) {
+        const setLower = effSet.toLowerCase();
+        const numInt = parseInt(effNum, 10);
+
+        // SWUDB (https://swudb.com/search/type:Base) afbeeldings-CDN's
+        urls.push(`https://swudb.com/images/cards/${effSet}/${effNum}.png`);
+        urls.push(`https://swudb.com/cdn-cgi/image/width=600/images/cards/${effSet}/${effNum}.png`);
+        if (!isNaN(numInt)) {
+          urls.push(`https://swudb.com/images/cards/${effSet}/${numInt}.png`);
+          urls.push(`https://api.swu-db.com/cards/${setLower}/${numInt}?format=image`);
+        }
+        urls.push(`https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/swu/${effSet}/${effSet}_${effNum}_EN.png`);
+        urls.push(`https://www.swucards.info/images/cards/${effSet}-${effNum}.webp`);
+      }
+
       urls.push(createSvgBaseDataUri(base));
-      return urls;
+      return [...new Set(urls)];
     }
 
     const resolvedBaseImageMap = {};
@@ -978,7 +1090,7 @@
     };
 
     window.handleCardImgError = function(imgEl, baseId) {
-      const base = allBases.find(b => b.id === baseId) || INITIAL_BASES[0];
+      const base = getBaseById(baseId);
       const candidates = getBaseImageCandidates(base);
       const currentIdx = parseInt(imgEl.dataset.fallbackIdx || '0', 10);
       const nextIdx = currentIdx + 1;
@@ -996,6 +1108,85 @@
       return { src: candidates[0], idx: 0 };
     }
 
+    async function syncOfficialBases(showFeedback = false) {
+      const btn = document.getElementById('liveSyncBtn');
+      if (btn) btn.textContent = '🔄 Laden van SWUAPI...';
+      isLoadingApiBases = true;
+
+      try {
+        const response = await fetch(SWUAPI_BASES_URL);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const payload = await response.json();
+        const rawCards = Array.isArray(payload)
+          ? payload
+          : (payload.cards || payload.data || payload.results || payload.items || []);
+
+        const byKey = new Map();
+
+        rawCards.forEach((raw, idx) => {
+          const normalized = normalizeApiCardToBase(raw, idx);
+          if (!normalized) return;
+
+          // Unieke sleutel op set + naam + planeet zodat elke unieke Base bewaard blijft
+          const uniqueKey = `${normalized.set}::${normalized.name.toLowerCase()}::${normalized.planet.toLowerCase()}`;
+          const existing = byKey.get(uniqueKey);
+
+          if (!existing) {
+            byKey.set(uniqueKey, normalized);
+          } else {
+            if (existing.isSpecialVariant && !normalized.isSpecialVariant) {
+              if (normalized.apiImages.length === 0 && existing.apiImages.length > 0) {
+                normalized.apiImages = existing.apiImages;
+              }
+              byKey.set(uniqueKey, normalized);
+            } else if (existing.apiImages.length === 0 && normalized.apiImages.length > 0) {
+              existing.apiImages = normalized.apiImages;
+            }
+          }
+        });
+
+        const apiBasesList = Array.from(byKey.values());
+
+        if (apiBasesList.length > 0) {
+          allBases = [...customUploadedBases, ...apiBasesList];
+          try {
+            localStorage.setItem('swu_api_bases_cache_v2', JSON.stringify(apiBasesList));
+          } catch (e) {}
+
+          // Koppel spelers aan hun gekozen Base (of geef elke speler een eigen start-base als zijn oude ID niet meer bestaat)
+          state.players.forEach((p, idx) => {
+            let match = allBases.find(b => b.id === p.baseId);
+            if (!match && p.baseId) {
+              // Probeer op set-nummer prefix te matchen (bijv. 'SOR-028')
+              const prefix = String(p.baseId).split('-').slice(0, 2).join('-').toUpperCase();
+              match = allBases.find(b => `${b.set}-${b.num}`.toUpperCase() === prefix);
+            }
+            if (!match) {
+              match = allBases[idx % allBases.length] || allBases[0];
+            }
+            if (match) p.baseId = match.id;
+          });
+          saveState();
+        }
+
+        if (showFeedback) {
+          showToast(`${apiBasesList.length} Bases geladen met afbeeldingen!`);
+        }
+      } catch (err) {
+        if (showFeedback) {
+          showToast('Kon SWUAPI tijdelijk niet bereiken — gecachete bases actief');
+        }
+      } finally {
+        isLoadingApiBases = false;
+        if (btn) btn.textContent = '🔄 Ververs SWUAPI Bases';
+        renderFilterBars();
+        renderBaseGallery();
+        renderPlayers();
+        updatePlayersDOM();
+        renderMenuModalContent();
+      }
+    }
+
     // ============================================================================
     // 2. SPELSTATUS, SPELERS, ROTATIE & MOBIELE TOPBAR-VERBERGFUNCTIE
     // ============================================================================
@@ -1011,7 +1202,7 @@
       );
     }
 
-    let manualTopbarOverride = null; // null = auto op mobiel bij roteren, true = altijd verbergen, false = altijd tonen
+    let manualTopbarOverride = null;
 
     function syncTopbarWithOrientation() {
       const isLandscape = isLandscapeScreen();
@@ -1064,11 +1255,11 @@
       timerPaused: false,
       previousInitPlayerId: 0,
       players: [
-        { id: 0, damage: 0, baseId: 'SOR-028', rotation: 90, claimedToken: null, l1: false, l2: false, epicBase: false },
+        { id: 0, damage: 0, baseId: 'P25-098', rotation: 90, claimedToken: null, l1: false, l2: false, epicBase: false },
         { id: 1, damage: 0, baseId: 'SOR-025', rotation: -90, claimedToken: null, l1: false, l2: false, epicBase: false },
-        { id: 2, damage: 0, baseId: 'SOR-022', rotation: 90, claimedToken: null, l1: false, l2: false, epicBase: false },
-        { id: 3, damage: 0, baseId: 'SOR-019', rotation: -90, claimedToken: null, l1: false, l2: false, epicBase: false },
-        { id: 4, damage: 0, baseId: 'LOF-023', rotation: 0, claimedToken: null, l1: false, l2: false, epicBase: false }
+        { id: 2, damage: 0, baseId: 'P26-131', rotation: 90, claimedToken: null, l1: false, l2: false, epicBase: false },
+        { id: 3, damage: 0, baseId: 'HMW-024', rotation: -90, claimedToken: null, l1: false, l2: false, epicBase: false },
+        { id: 4, damage: 0, baseId: 'IBH-002', rotation: 0, claimedToken: null, l1: false, l2: false, epicBase: false }
       ]
     };
 
@@ -1094,7 +1285,6 @@
       if (!forceApply && currentLandscape === lastIsLandscape) return false;
       lastIsLandscape = currentLandscape;
 
-      // Reset handmatige override bij fysiek kantelen zodat automatisch verbergen/tonen op mobiel altijd werkt
       manualTopbarOverride = null;
       syncTopbarWithOrientation();
 
@@ -1117,10 +1307,26 @@
     }
 
     function getBaseById(id) {
-      return allBases.find(b => b.id === id) || INITIAL_BASES[0];
+      const exact = allBases.find(b => b.id === id);
+      if (exact) return exact;
+      if (id) {
+        const prefix = String(id).split('-').slice(0, 2).join('-').toUpperCase();
+        const byPrefix = allBases.find(b => `${b.set}-${b.num}`.toUpperCase() === prefix);
+        if (byPrefix) return byPrefix;
+      }
+      if (allBases.length > 0) return allBases[0];
+      return {
+        id: id || 'LOADING',
+        set: 'SWU',
+        num: '000',
+        name: 'Bases laden...',
+        planet: 'SWUAPI',
+        aspect: 'Neutral',
+        hp: 30
+      };
     }
 
-    function showToast(msg) {
+    function showToast(msg, duration = 2400) {
       const banner = document.getElementById('toastBanner');
       const text = document.getElementById('toastText');
       if (!banner || !text) return;
@@ -1129,7 +1335,7 @@
       clearTimeout(window._toastTimeout);
       window._toastTimeout = setTimeout(() => {
         banner.classList.add('hidden');
-      }, 2400);
+      }, duration);
     }
 
     function changeDamage(playerId, delta) {
@@ -1157,6 +1363,294 @@
       p[key] = !p[key];
       saveState();
       updatePlayersDOM();
+    }
+
+    // ============================================================================
+    // 2B. DOBBELSTENEN (MULTI-TAP), GOUDEN COIN FLIP BOVEN MENU & RANDOM SPELER
+    // ============================================================================
+    const DIE_PIP_POSITIONS = {
+      1: [4],
+      2: [0, 8],
+      3: [0, 4, 8],
+      4: [0, 2, 6, 8],
+      5: [0, 2, 4, 6, 8],
+      6: [0, 2, 3, 5, 6, 8]
+    };
+
+    let activeDiceList = [];
+    let diceAutoClearTimer = null;
+    let coinAutoClearTimer = null;
+    let randomPlayerHighlightActive = false;
+    let randomPlayerLockUntil = 0;
+
+    function clearSwuFxOverlay() {
+      const overlay = document.getElementById('swuFxOverlay');
+      if (overlay) overlay.innerHTML = '';
+      activeDiceList = [];
+      const badge = document.getElementById('diceCountBadge');
+      if (badge) badge.classList.add('hidden');
+      clearTimeout(diceAutoClearTimer);
+      clearTimeout(coinAutoClearTimer);
+    }
+
+    function buildDiePipsHtml(val) {
+      const activeIndices = DIE_PIP_POSITIONS[val] || [4];
+      let html = '';
+      for (let i = 0; i < 9; i++) {
+        const isActive = activeIndices.includes(i);
+        const isSixHighlight = val === 6 && isActive;
+        html += `<span class="swu-die-pip ${isActive ? 'active' : ''} ${isSixHighlight ? 'crit-pip' : ''}"></span>`;
+      }
+      return html;
+    }
+
+    function computeDieTargetPosition(index) {
+      const angles = [215, 325, 145, 35, 270, 90, 180, 0, 240, 300, 120, 60];
+      const baseAngleDeg = angles[index % angles.length] + (Math.random() * 18 - 9);
+      const rad = (baseAngleDeg * Math.PI) / 180;
+      const ring = Math.floor(index / 6);
+      const radiusX = Math.min(28, 16 + ring * 8 + (index % 2) * 4);
+      const radiusY = Math.min(30, 18 + ring * 8 + ((index + 1) % 2) * 4);
+
+      const x = Math.max(14, Math.min(86, 50 + Math.cos(rad) * radiusX));
+      const y = Math.max(16, Math.min(84, 50 + Math.sin(rad) * radiusY));
+      return { x, y };
+    }
+
+    function updateDiceSummaryBanner() {
+      const overlay = document.getElementById('swuFxOverlay');
+      if (!overlay) return;
+      let summaryEl = document.getElementById('swuDiceSummaryBanner');
+
+      if (activeDiceList.length === 0) {
+        if (summaryEl) summaryEl.remove();
+        return;
+      }
+
+      if (!summaryEl) {
+        summaryEl = document.createElement('div');
+        summaryEl.id = 'swuDiceSummaryBanner';
+        summaryEl.className = 'swu-dice-summary';
+        summaryEl.onclick = (e) => {
+          e.stopPropagation();
+          clearSwuFxOverlay();
+        };
+        overlay.appendChild(summaryEl);
+      }
+
+      const total = activeDiceList.reduce((acc, d) => acc + d.value, 0);
+      const valuesText = activeDiceList.map(d => d.value).join(' + ');
+      summaryEl.innerHTML = `
+        <span class="sw-font text-[10px] font-extrabold uppercase tracking-widest text-amber-400">
+          ${activeDiceList.length} ${activeDiceList.length === 1 ? 'Dobbelsteen' : 'Dobbelstenen'}
+        </span>
+        <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+        <span class="sw-font text-sm font-black text-white">
+          ${activeDiceList.length > 1 ? `${valuesText} = <span class="text-amber-400">${total}</span>` : `Worp: <span class="text-amber-400">${total}</span>`}
+        </span>
+        <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 ml-1">(Tik om te sluiten)</span>
+      `;
+    }
+
+    function triggerSwuDiceRoll(event) {
+      if (event) event.stopPropagation();
+      clearRandomPlayerHighlight();
+
+      const overlay = document.getElementById('swuFxOverlay');
+      if (!overlay) return;
+
+      const existingCoin = document.getElementById('swuCoinStage');
+      if (existingCoin) existingCoin.remove();
+
+      const dieIndex = activeDiceList.length;
+      const finalVal = Math.floor(Math.random() * 6) + 1;
+      const targetPos = computeDieTargetPosition(dieIndex);
+
+      const startFromTop = Math.random() > 0.5;
+      const startX = 15 + Math.random() * 70;
+      const startY = startFromTop ? -8 : 108;
+      const startRot = (Math.random() > 0.5 ? 1 : -1) * (360 + Math.floor(Math.random() * 360));
+      const finalRot = Math.floor(Math.random() * 34) - 17;
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'swu-die-wrapper';
+      wrapper.style.left = `${startX}%`;
+      wrapper.style.top = `${startY}%`;
+      wrapper.onclick = (e) => {
+        e.stopPropagation();
+        clearSwuFxOverlay();
+      };
+
+      const body = document.createElement('div');
+      body.className = 'swu-die-body';
+      body.style.transform = `rotate(${startRot}deg) scale(0.45)`;
+      body.innerHTML = buildDiePipsHtml(Math.floor(Math.random() * 6) + 1);
+
+      wrapper.appendChild(body);
+      overlay.appendChild(wrapper);
+
+      const dieObj = { id: Date.now() + Math.random(), value: finalVal, wrapper, body };
+      activeDiceList.push(dieObj);
+
+      const badge = document.getElementById('diceCountBadge');
+      if (badge) {
+        badge.textContent = `${activeDiceList.length}x`;
+        badge.classList.remove('hidden');
+      }
+
+      let ticks = 0;
+      const scrambleInterval = setInterval(() => {
+        ticks++;
+        if (ticks < 6) {
+          body.innerHTML = buildDiePipsHtml(Math.floor(Math.random() * 6) + 1);
+        } else {
+          clearInterval(scrambleInterval);
+          body.innerHTML = buildDiePipsHtml(finalVal);
+          updateDiceSummaryBanner();
+        }
+      }, 95);
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          wrapper.style.left = `${targetPos.x}%`;
+          wrapper.style.top = `${targetPos.y}%`;
+          body.style.transform = `rotate(${finalRot}deg) scale(1)`;
+        });
+      });
+
+      updateDiceSummaryBanner();
+
+      clearTimeout(diceAutoClearTimer);
+      diceAutoClearTimer = setTimeout(() => {
+        clearSwuFxOverlay();
+      }, 6500);
+    }
+
+    function triggerSwuCoinFlip(event) {
+      if (event) event.stopPropagation();
+      clearRandomPlayerHighlight();
+      clearSwuFxOverlay();
+
+      const overlay = document.getElementById('swuFxOverlay');
+      if (!overlay) return;
+
+      const isHeads = Math.random() < 0.5;
+      const spins = 5;
+      const finalDeg = spins * 360 + (isHeads ? 0 : 180);
+
+      const stage = document.createElement('div');
+      stage.id = 'swuCoinStage';
+      stage.className = 'swu-coin-stage';
+      stage.onclick = (e) => {
+        e.stopPropagation();
+        clearSwuFxOverlay();
+      };
+
+      stage.innerHTML = `
+        <div id="swuCoin3D" class="swu-coin-3d" style="transform: translateY(70px) scale(0.45) rotateY(0deg) rotateX(35deg);">
+          <!-- HEADS (Gouden Munt - Kop / Initiative) -->
+          <div class="swu-coin-face swu-coin-heads">
+            <svg class="w-11 h-11 mb-0.5 text-amber-950" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5">
+              <polygon points="12 2 14.9 8.6 22 9.3 16.6 14 18.2 21 12 17.3 5.8 21 7.4 14 2 9.3 9.1 8.6 12 2"></polygon>
+            </svg>
+            <span class="sw-font text-xs font-black tracking-widest uppercase text-amber-950">HEADS</span>
+            <span class="text-[8px] font-extrabold uppercase tracking-widest text-amber-900">KOP • INIT</span>
+          </div>
+
+          <!-- TAILS (Gouden Munt - Munt / Twin Suns) -->
+          <div class="swu-coin-face swu-coin-tails">
+            <svg class="w-11 h-11 mb-0.5 text-amber-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <circle cx="9.5" cy="10.5" r="4.5"></circle>
+              <circle cx="15.5" cy="14.5" r="3.5"></circle>
+              <path d="M3 19h18"></path>
+            </svg>
+            <span class="sw-font text-xs font-black tracking-widest uppercase text-amber-100">TAILS</span>
+            <span class="text-[8px] font-extrabold uppercase tracking-widest text-amber-200/90">MUNT • SUNS</span>
+          </div>
+        </div>
+        <div id="swuCoinBanner" class="swu-coin-banner opacity-0 transition duration-300">
+          <div class="sw-font text-xs font-black tracking-widest uppercase text-amber-400">
+            COIN FLIP: ${isHeads ? 'HEADS (KOP)' : 'TAILS (MUNT)'}
+          </div>
+          <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Tik om te sluiten</div>
+        </div>
+      `;
+
+      overlay.appendChild(stage);
+
+      const coin3d = document.getElementById('swuCoin3D');
+      const banner = document.getElementById('swuCoinBanner');
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (coin3d) {
+            coin3d.style.transform = `translateY(0px) scale(1) rotateY(${finalDeg}deg) rotateX(0deg)`;
+          }
+        });
+      });
+
+      setTimeout(() => {
+        if (banner) banner.classList.remove('opacity-0');
+      }, 1050);
+
+      clearTimeout(coinAutoClearTimer);
+      coinAutoClearTimer = setTimeout(() => {
+        clearSwuFxOverlay();
+      }, 5500);
+    }
+
+    function clearRandomPlayerHighlight() {
+      if (!randomPlayerHighlightActive) return;
+      randomPlayerHighlightActive = false;
+      const slots = document.querySelectorAll('.player-slot');
+      slots.forEach(s => {
+        s.classList.remove('dimmed-slot', 'selected-random-slot');
+      });
+    }
+
+    function selectRandomPlayerFromMenu(event) {
+      if (event) event.stopPropagation();
+      closeMenuModal();
+      clearSwuFxOverlay();
+
+      const count = state.playerCount;
+      const winnerIdx = Math.floor(Math.random() * count);
+      const slots = Array.from(document.querySelectorAll('.player-slot'));
+      if (slots.length === 0) return;
+
+      randomPlayerHighlightActive = true;
+      randomPlayerLockUntil = Date.now() + 1400;
+
+      let step = 0;
+      const totalSteps = 10 + winnerIdx;
+      const spinTimer = setInterval(() => {
+        const currentIdx = step % count;
+        slots.forEach((slot, idx) => {
+          if (idx === currentIdx) {
+            slot.classList.add('selected-random-slot');
+            slot.classList.remove('dimmed-slot');
+          } else {
+            slot.classList.add('dimmed-slot');
+            slot.classList.remove('selected-random-slot');
+          }
+        });
+        step++;
+
+        if (step > totalSteps) {
+          clearInterval(spinTimer);
+          slots.forEach((slot, idx) => {
+            if (idx === winnerIdx) {
+              slot.classList.add('selected-random-slot');
+              slot.classList.remove('dimmed-slot');
+            } else {
+              slot.classList.add('dimmed-slot');
+              slot.classList.remove('selected-random-slot');
+            }
+          });
+          const base = getBaseById(state.players[winnerIdx]?.baseId);
+          showToast(`Speler ${winnerIdx + 1} (${base.name}) is gekozen! Tik op het scherm om door te gaan`, 4500);
+        }
+      }, 85);
     }
 
     // ============================================================================
@@ -1317,6 +1811,7 @@
                 id="tcgArt-${player.id}"
                 src="${initialImg.src}"
                 alt="${base.name}"
+                referrerpolicy="no-referrer"
                 data-fallback-idx="${initialImg.idx}"
                 onload="handleCardImgLoad(this, '${base.id}')"
                 onerror="handleCardImgError(this, '${base.id}')"
@@ -1324,7 +1819,7 @@
               />
               <div id="tcgVignette-${player.id}" class="tcg-vignette" style="${isLethal ? 'background: radial-gradient(circle, rgba(127,29,29,0.35) 0%, rgba(127,29,29,0.78) 100%);' : ''}"></div>
 
-              <!-- BOVENSTE BALK: Verander Base knop (+ Planeet eronder) links + EPIC/L1/L2 & Rotatie rechts -->
+              <!-- BOVENSTE BALK -->
               <div class="top-bar-ui relative z-20 flex items-start justify-between pointer-events-auto gap-1 w-full">
                 <div class="flex flex-col items-start max-w-[48%] min-w-0">
                   <button
@@ -1387,7 +1882,6 @@
                   <span class="sw-font tap-sign font-black text-white/95 drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">+</span>
                 </div>
 
-                <!-- Centraal Schadegetal -->
                 <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
                   <span
                     id="dmgValue-${player.id}"
@@ -1431,16 +1925,17 @@
           unitEl.style.borderColor = aspectStyle.border;
 
           const currentRenderedBaseId = unitEl.getAttribute('data-base-id');
-          if (currentRenderedBaseId !== base.id) {
+          const artEl = document.getElementById(`tcgArt-${player.id}`);
+          const bestImg = getBestInitialBaseImage(base);
+
+          if (currentRenderedBaseId !== base.id || (artEl && artEl.src.startsWith('data:image/svg+xml') && !bestImg.src.startsWith('data:image/svg+xml'))) {
             unitEl.setAttribute('data-base-id', base.id);
-            const artEl = document.getElementById(`tcgArt-${player.id}`);
             if (artEl) {
-              const initialImg = getBestInitialBaseImage(base);
-              artEl.dataset.fallbackIdx = String(initialImg.idx);
+              artEl.dataset.fallbackIdx = String(bestImg.idx);
               artEl.alt = base.name;
               artEl.setAttribute('onload', `handleCardImgLoad(this, '${base.id}')`);
               artEl.setAttribute('onerror', `handleCardImgError(this, '${base.id}')`);
-              artEl.src = initialImg.src;
+              artEl.src = bestImg.src;
             }
           }
         }
@@ -1590,6 +2085,7 @@
     }
 
     function setPlayerCount(count) {
+      clearRandomPlayerHighlight();
       state.playerCount = count;
       const rots = getDefaultRotationsForMode(count);
       for (let i = 0; i < count; i++) {
@@ -1604,6 +2100,8 @@
     }
 
     function resetFullGame() {
+      clearRandomPlayerHighlight();
+      clearSwuFxOverlay();
       state.round = 1;
       state.elapsedSeconds = 0;
       state.timerPaused = false;
@@ -1652,7 +2150,11 @@
       });
 
       const badge = document.getElementById('baseTotalBadge');
-      if (badge) badge.textContent = `${allBases.length} Bases beschikbaar`;
+      if (badge) {
+        badge.textContent = isLoadingApiBases
+          ? 'SWUAPI laden...'
+          : `${allBases.length} Bases live via SWUAPI`;
+      }
 
       const listEl = document.getElementById('menuPlayerBaseList');
       if (!listEl) return;
@@ -1680,11 +2182,24 @@
     }
 
     // ============================================================================
-    // 6. BASE KIEZER MET PLANEET-ZOEKEN EN LIVE SYNC VAN NIEUWE BASES
+    // 6. DYNAMISCHE BASE KIEZER (SETS AUTOMATISCH UIT SWUAPI + EIGEN UPLOAD)
     // ============================================================================
     let activeBaseModalPlayer = 0;
     let selectedSetFilter = 'ALL';
     let selectedAspectFilter = 'ALL';
+
+    function getDynamicSetsList() {
+      const uniqueSets = [];
+      allBases.forEach(b => {
+        if (b.set && !uniqueSets.includes(b.set)) {
+          uniqueSets.push(b.set);
+        }
+      });
+      return [
+        { code: 'ALL', label: 'Alle Sets' },
+        ...uniqueSets.map(code => ({ code, label: code }))
+      ];
+    }
 
     function openBaseModal(playerId) {
       activeBaseModalPlayer = playerId;
@@ -1717,9 +2232,10 @@
     function renderFilterBars() {
       const setBar = document.getElementById('setFilterBar');
       const aspectBar = document.getElementById('aspectFilterBar');
+      const setsMeta = getDynamicSetsList();
 
       if (setBar) {
-        setBar.innerHTML = SETS_META.map(s => {
+        setBar.innerHTML = setsMeta.map(s => {
           const active = selectedSetFilter === s.code;
           return `<button
             onclick="selectedSetFilter='${s.code}'; renderFilterBars(); renderBaseGallery();"
@@ -1752,7 +2268,13 @@
       const query = (document.getElementById('baseSearchInput')?.value || '').trim().toLowerCase();
       if (!grid) return;
 
-      const currentPlayerBaseId = state.players[activeBaseModalPlayer]?.baseId;
+      if (isLoadingApiBases && allBases.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center py-12 text-amber-300 text-sm font-bold">🔄 Actuele Bases worden opgehaald van api.swuapi.com...</div>`;
+        return;
+      }
+
+      const currentPlayerBase = getBaseById(state.players[activeBaseModalPlayer]?.baseId);
+      const currentPlayerBaseId = currentPlayerBase?.id;
 
       const filtered = allBases.filter(b => {
         if (selectedSetFilter !== 'ALL' && b.set !== selectedSetFilter) return false;
@@ -1771,11 +2293,12 @@
         const initialImg = getBestInitialBaseImage(base);
         const isSelected = base.id === currentPlayerBaseId;
         const aspectCol = ASPECT_COLORS[base.aspect] || ASPECT_COLORS.Neutral;
+        const safeIdAttr = base.id.replace(/'/g, "\\'");
 
         return `
           <div
             ${isSelected ? 'id="selectedBaseCardItem"' : ''}
-            onclick="selectBaseForPlayer('${base.id}')"
+            onclick="selectBaseForPlayer('${safeIdAttr}')"
             class="group cursor-pointer rounded-xl overflow-hidden bg-slate-950 border-2 transition flex flex-col shrink-0 ${
               isSelected
                 ? 'border-amber-400 ring-2 ring-amber-400/60 shadow-[0_0_20px_rgba(250,204,21,0.35)]'
@@ -1787,9 +2310,10 @@
                 src="${initialImg.src}"
                 alt="${base.name}"
                 loading="lazy"
+                referrerpolicy="no-referrer"
                 data-fallback-idx="${initialImg.idx}"
-                onload="handleCardImgLoad(this, '${base.id}')"
-                onerror="handleCardImgError(this, '${base.id}')"
+                onload="handleCardImgLoad(this, '${safeIdAttr}')"
+                onerror="handleCardImgError(this, '${safeIdAttr}')"
                 class="w-full h-full object-cover group-hover:scale-105 transition duration-200"
               />
               ${isSelected ? `
@@ -1832,18 +2356,22 @@
       const hp = parseInt(hpInput?.value || '30', 10) || 30;
       if (!url) return;
 
-      const customId = 'CUSTOM-' + Date.now();
-      allBases.unshift({
-        id: customId,
-        set: 'IBH',
+      const customBase = {
+        id: 'CUSTOM-' + Date.now(),
+        set: 'CUSTOM',
         num: '999',
+        hasExactNum: false,
         name: 'Eigen Base',
         planet: 'Custom Planeet',
         aspect: 'Neutral',
         hp: hp,
-        customImg: url
-      });
-      selectBaseForPlayer(customId);
+        customImg: url,
+        apiImages: [url]
+      };
+      customUploadedBases.unshift(customBase);
+      allBases.unshift(customBase);
+      saveCustomBases();
+      selectBaseForPlayer(customBase.id);
     }
 
     function applyCustomFileBase(event) {
@@ -1852,87 +2380,46 @@
       const hp = parseInt(document.getElementById('customBaseHp')?.value || '30', 10) || 30;
       const reader = new FileReader();
       reader.onload = function(e) {
-        const customId = 'FILE-' + Date.now();
-        allBases.unshift({
-          id: customId,
-          set: 'IBH',
+        const customBase = {
+          id: 'FILE-' + Date.now(),
+          set: 'CUSTOM',
           num: '999',
+          hasExactNum: false,
           name: file.name.replace(/\.[^/.]+$/, ''),
           planet: 'Eigen Planeet',
           aspect: 'Neutral',
           hp: hp,
-          customImg: e.target.result
-        });
-        selectBaseForPlayer(customId);
+          customImg: e.target.result,
+          apiImages: [e.target.result]
+        };
+        customUploadedBases.unshift(customBase);
+        allBases.unshift(customBase);
+        saveCustomBases();
+        selectBaseForPlayer(customBase.id);
       };
       reader.readAsDataURL(file);
     }
 
-    async function syncOfficialBases() {
-      const btn = document.getElementById('liveSyncBtn');
-      if (btn) btn.textContent = '🔄 Bezig met ophalen...';
+    // ============================================================================
+    // 7. GLOBALE SCHERM-INTERACTIE (RESET RANDOM SPELER DIMMING & SLUIT FX OVERLAY)
+    // ============================================================================
+    document.addEventListener('pointerdown', (e) => {
+      if (randomPlayerHighlightActive && Date.now() > randomPlayerLockUntil) {
+        clearRandomPlayerHighlight();
+      }
 
-      try {
-        const endpoints = [
-          'https://api.swu-db.com/cards/search?q=type:base',
-          'https://api.swuapi.com/cards?type=Base&limit=250'
-        ];
-
-        for (const url of endpoints) {
-          try {
-            const res = await fetch(url);
-            if (!res.ok) continue;
-            const data = await res.json();
-            const cards = Array.isArray(data) ? data : (data.data || data.cards || []);
-
-            cards.forEach(c => {
-              const cardType = String(c.type || c.Type || '').toLowerCase();
-              if (cardType && cardType !== 'base') return;
-
-              const setCode = String(c.set || c.Set || 'SOR').toUpperCase();
-              const rawNum = String(c.number || c.Number || c.cardNumber || '019').padStart(3, '0');
-              const id = `${setCode}-${rawNum}`;
-              const name = c.name || c.Name || c.title;
-              if (!name) return;
-
-              const planet =
-                c.subtitle ||
-                c.Subtitle ||
-                (Array.isArray(c.traits) ? c.traits.join(' / ') : '') ||
-                'Onbekende Planeet';
-              const hp = parseInt(c.hp || c.HP || 30, 10) || 30;
-              const imgUrl = c.frontImageUrl || c.FrontArt || c.imageUrl || null;
-              const aspectRaw = Array.isArray(c.aspects) ? c.aspects[0] : (Array.isArray(c.Aspects) ? c.Aspects[0] : 'Neutral');
-              const aspect = ASPECT_COLORS[aspectRaw] ? aspectRaw : 'Neutral';
-
-              const existing = allBases.find(b => b.id === id || b.name.toLowerCase() === name.toLowerCase());
-              if (existing) {
-                if (imgUrl) existing.customImg = imgUrl;
-                if (planet && !existing.planet) existing.planet = planet;
-              } else {
-                allBases.push({
-                  id,
-                  set: setCode,
-                  num: rawNum,
-                  name,
-                  planet,
-                  aspect,
-                  hp,
-                  customImg: imgUrl
-                });
-              }
-            });
-          } catch (innerErr) {}
-        }
-      } catch (err) {}
-
-      if (btn) btn.textContent = '🔄 Zoek live naar nieuwe Bases';
-      renderBaseGallery();
-      renderPlayers();
-    }
+      const clickedDiceBtn = e.target.closest('#hudDiceBtn');
+      const clickedCoinBtn = e.target.closest('#hudCoinBtn');
+      if (!clickedDiceBtn && !clickedCoinBtn && activeDiceList.length > 0) {
+        clearSwuFxOverlay();
+      }
+      if (!clickedCoinBtn && document.getElementById('swuCoinStage')) {
+        clearSwuFxOverlay();
+      }
+    }, { capture: true, passive: true });
 
     // ============================================================================
-    // 7. SCREEN WAKE LOCK (HOUDT HET SCHERM VAN MOBIELE APPARATEN ALTIJD AAN)
+    // 8. SCREEN WAKE LOCK (HOUDT HET SCHERM VAN MOBIELE APPARATEN ALTIJD AAN)
     // ============================================================================
     let wakeLockSentinel = null;
 
@@ -1974,7 +2461,7 @@
       renderPlayers();
       updateHudDisplays();
       requestScreenWakeLock();
-      syncOfficialBases();
+      syncOfficialBases(false);
     });
     syncTopbarWithOrientation();
     renderPlayers();
